@@ -1,0 +1,29 @@
+{
+  "Python": {"depends_on": [], "difficulty": 1, "domain": "programming", "tags": ["programming", "foundational"]},
+  "HTML/CSS": {"depends_on": [], "difficulty": 1, "domain": "web", "tags": ["web", "frontend", "foundational"]},
+  "Git": {"depends_on": [], "difficulty": 1, "domain": "tools", "tags": ["tools", "foundational"]},
+  "Networking Fundamentals": {"depends_on": [], "difficulty": 1, "domain": "security", "tags": ["security", "foundational"]},
+  "Operating Systems": {"depends_on": [], "difficulty": 1, "domain": "security", "tags": ["security", "foundational"]},
+
+  "Data Structures": {"depends_on": ["Python"], "difficulty": 2, "domain": "programming", "tags": ["programming", "foundational"]},
+  "SQL": {"depends_on": ["Python"], "difficulty": 2, "domain": "data", "tags": ["data", "practical"]},
+  "Statistics": {"depends_on": ["Python"], "difficulty": 2, "domain": "math", "tags": ["math", "theory"]},
+  "Linear Algebra": {"depends_on": ["Python"], "difficulty": 2, "domain": "math", "tags": ["math", "theory"]},
+  "JavaScript": {"depends_on": ["HTML/CSS"], "difficulty": 2, "domain": "web", "tags": ["web", "programming", "foundational"]},
+  "Linux Administration": {"depends_on": ["Operating Systems"], "difficulty": 2, "domain": "security", "tags": ["security", "practical"]},
+  "Security Fundamentals": {"depends_on": ["Networking Fundamentals", "Operating Systems"], "difficulty": 2, "domain": "security", "tags": ["security", "theory"]},
+
+  "Data Visualization": {"depends_on": ["Statistics", "SQL"], "difficulty": 2, "domain": "data", "tags": ["data", "communication"]},
+  "Data Wrangling": {"depends_on": ["SQL", "Statistics"], "difficulty": 2, "domain": "data", "tags": ["data", "practical"]},
+  "React": {"depends_on": ["JavaScript"], "difficulty": 3, "domain": "web", "tags": ["web", "frontend"]},
+  "Backend Development": {"depends_on": ["JavaScript", "Data Structures"], "difficulty": 3, "domain": "web", "tags": ["web", "backend"]},
+  "REST APIs": {"depends_on": ["Backend Development"], "difficulty": 3, "domain": "web", "tags": ["web", "backend", "practical"]},
+  "Network Security": {"depends_on": ["Security Fundamentals", "Networking Fundamentals"], "difficulty": 3, "domain": "security", "tags": ["security", "core"]},
+  "Cryptography": {"depends_on": ["Security Fundamentals", "Linear Algebra"], "difficulty": 3, "domain": "security", "tags": ["security", "theory"]},
+
+  "Machine Learning": {"depends_on": ["Statistics", "Linear Algebra", "Python"], "difficulty": 4, "domain": "ml", "tags": ["ml", "core"]},
+  "Ethical Hacking": {"depends_on": ["Network Security", "Linux Administration"], "difficulty": 4, "domain": "security", "tags": ["security", "advanced"]},
+
+  "Deep Learning": {"depends_on": ["Machine Learning", "Linear Algebra"], "difficulty": 5, "domain": "ml", "tags": ["ml", "advanced"]},
+  "Model Deployment": {"depends_on": ["Machine Learning", "SQL"], "difficulty": 4, "domain": "ml", "tags": ["ml", "practical", "production"]}
+}

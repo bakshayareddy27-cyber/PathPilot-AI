@@ -1,0 +1,52 @@
+skill,resource_name,type,url,est_hours,difficulty
+Python,Python for Everybody (Course),course,https://www.coursera.org/specializations/python,25,1
+Python,Automate the Boring Stuff (Course),course,https://automatetheboringstuff.com,15,1
+Python,Build a CLI Task Manager,project,https://github.com/topics/python-cli-project,6,1
+Python,Python Fundamentals Quiz,assessment,https://www.hackerrank.com/domains/python,2,1
+HTML/CSS,HTML CSS Crash Course,course,https://www.freecodecamp.org/learn/responsive-web-design,20,1
+HTML/CSS,Build a Personal Portfolio Page,project,https://www.freecodecamp.org/news/how-to-build-a-portfolio-site,5,1
+Git,Git and GitHub for Beginners,course,https://www.freecodecamp.org/news/git-and-github-for-beginners,6,1
+Git,Version Control a Sample Project,project,https://docs.github.com/en/get-started/quickstart,3,1
+Networking Fundamentals,Networking Basics (Course),course,https://www.coursera.org/learn/computer-networking,15,1
+Networking Fundamentals,Networking Fundamentals Quiz,assessment,https://www.comptia.org/certifications/network,2,1
+Operating Systems,Operating Systems Concepts (Course),course,https://www.coursera.org/learn/os-power-user,15,1
+Data Structures,Data Structures and Algorithms (Course),course,https://www.coursera.org/specializations/data-structures-algorithms,30,2
+Data Structures,Implement a Binary Search Tree,project,https://github.com/topics/data-structures-project,6,2
+Data Structures,DSA Practice Assessment,assessment,https://leetcode.com/explore,3,2
+SQL,SQL for Data Analysis (Course),course,https://www.khanacademy.org/computing/computer-programming/sql,12,2
+SQL,Build a Sales Data Query Project,project,https://mode.com/sql-tutorial,5,2
+SQL,SQL Skills Assessment,assessment,https://www.hackerrank.com/domains/sql,2,2
+Statistics,Statistics for Data Science (Course),course,https://www.khanacademy.org/math/statistics-probability,20,2
+Statistics,Statistics Applied Project,project,https://www.kaggle.com/learn/statistics,6,2
+Linear Algebra,Linear Algebra Essentials (Course),course,https://www.khanacademy.org/math/linear-algebra,18,2
+Linear Algebra,Linear Algebra Practice Set,assessment,https://www.khanacademy.org/math/linear-algebra,2,2
+JavaScript,JavaScript Algorithms and Data Structures,course,https://www.freecodecamp.org/learn/javascript-algorithms-and-data-structures,25,2
+JavaScript,Build an Interactive To-Do App,project,https://www.freecodecamp.org/news/javascript-to-do-list-project,6,2
+JavaScript,JS Fundamentals Quiz,assessment,https://www.w3schools.com/js/js_quiz.asp,2,2
+Linux Administration,Linux Command Line Basics (Course),course,https://www.codecademy.com/learn/learn-the-command-line,12,2
+Linux Administration,Set Up a Linux Home Server,project,https://ubuntu.com/tutorials/install-ubuntu-server,5,2
+Security Fundamentals,Introduction to Cybersecurity (Course),course,https://www.coursera.org/learn/cyber-security-basics,15,2
+Security Fundamentals,Security Fundamentals Assessment,assessment,https://www.comptia.org/certifications/security,2,2
+Data Visualization,Data Visualization with Plotly (Course),course,https://plotly.com/python,10,2
+Data Visualization,Build a Sales Dashboard,project,https://www.kaggle.com/learn/data-visualization,6,2
+Data Wrangling,Data Cleaning and Wrangling (Course),course,https://www.kaggle.com/learn/data-cleaning,10,2
+Data Wrangling,Clean a Messy Real-World Dataset,project,https://www.kaggle.com/datasets,6,2
+React,React Fundamentals (Course),course,https://react.dev/learn,20,3
+React,Build a Movie Search App,project,https://github.com/topics/react-project,8,3
+Backend Development,Node.js and Express Backend (Course),course,https://www.freecodecamp.org/learn/back-end-development-and-apis,25,3
+Backend Development,Build a REST Backend for a Blog,project,https://expressjs.com/en/starter/hello-world.html,10,3
+REST APIs,Designing REST APIs (Course),course,https://restfulapi.net,8,3
+REST APIs,Build and Document a Public API,project,https://swagger.io/resources/articles/documenting-apis-with-swagger,6,3
+Network Security,Network Security Fundamentals (Course),course,https://www.coursera.org/learn/network-security-database-vulnerabilities,18,3
+Network Security,Configure a Firewall Lab,project,https://www.comptia.org/certifications/security,6,3
+Cryptography,Applied Cryptography (Course),course,https://www.coursera.org/learn/crypto,15,3
+Cryptography,Implement Basic Encryption Algorithms,project,https://github.com/topics/cryptography-project,6,3
+Machine Learning,Machine Learning by Andrew Ng (Course),course,https://www.coursera.org/learn/machine-learning,40,4
+Machine Learning,Build a House Price Prediction Model,project,https://www.kaggle.com/learn/intro-to-machine-learning,10,4
+Machine Learning,ML Concepts Assessment,assessment,https://www.kaggle.com/learn/intro-to-machine-learning,3,4
+Ethical Hacking,Ethical Hacking Essentials (Course),course,https://www.coursera.org/learn/ethical-hacking,20,4
+Ethical Hacking,Complete a Capture-the-Flag Challenge,project,https://tryhackme.com,10,4
+Deep Learning,Deep Learning Specialization (Course),course,https://www.coursera.org/specializations/deep-learning,45,5
+Deep Learning,Build an Image Classifier with CNNs,project,https://www.kaggle.com/learn/computer-vision,12,5
+Model Deployment,Deploying ML Models (Course),course,https://www.coursera.org/learn/mlops-fundamentals,15,4
+Model Deployment,Deploy a Model as a REST API,project,https://www.tensorflow.org/tfx/guide/serving,8,4

@@ -1,0 +1,60 @@
+{
+  "Machine Learning Engineer": {
+    "description": "Builds and deploys ML models into production systems.",
+    "typical_hours_per_week": 10,
+    "required_skills": [
+      {"name": "Python", "priority": 5, "tags": ["programming", "foundational"]},
+      {"name": "Statistics", "priority": 5, "tags": ["math", "theory"]},
+      {"name": "Linear Algebra", "priority": 4, "tags": ["math", "theory"]},
+      {"name": "SQL", "priority": 3, "tags": ["data", "practical"]},
+      {"name": "Data Structures", "priority": 3, "tags": ["programming", "foundational"]},
+      {"name": "Machine Learning", "priority": 5, "tags": ["ml", "core"]},
+      {"name": "Deep Learning", "priority": 4, "tags": ["ml", "advanced"]},
+      {"name": "Model Deployment", "priority": 4, "tags": ["ml", "practical", "production"]},
+      {"name": "Data Visualization", "priority": 2, "tags": ["data", "communication"]}
+    ]
+  },
+  "Data Scientist": {
+    "description": "Extracts insights from data to drive business decisions.",
+    "typical_hours_per_week": 10,
+    "required_skills": [
+      {"name": "Python", "priority": 5, "tags": ["programming", "foundational"]},
+      {"name": "Statistics", "priority": 5, "tags": ["math", "theory"]},
+      {"name": "SQL", "priority": 5, "tags": ["data", "practical"]},
+      {"name": "Data Structures", "priority": 2, "tags": ["programming", "foundational"]},
+      {"name": "Data Visualization", "priority": 4, "tags": ["data", "communication"]},
+      {"name": "Machine Learning", "priority": 4, "tags": ["ml", "core"]},
+      {"name": "Linear Algebra", "priority": 3, "tags": ["math", "theory"]},
+      {"name": "Data Wrangling", "priority": 4, "tags": ["data", "practical"]}
+    ]
+  },
+  "Full Stack Web Developer": {
+    "description": "Builds complete web applications spanning frontend and backend.",
+    "typical_hours_per_week": 10,
+    "required_skills": [
+      {"name": "HTML/CSS", "priority": 5, "tags": ["web", "frontend", "foundational"]},
+      {"name": "JavaScript", "priority": 5, "tags": ["web", "programming", "foundational"]},
+      {"name": "Python", "priority": 2, "tags": ["programming", "foundational"]},
+      {"name": "Data Structures", "priority": 3, "tags": ["programming", "foundational"]},
+      {"name": "React", "priority": 4, "tags": ["web", "frontend"]},
+      {"name": "Backend Development", "priority": 4, "tags": ["web", "backend"]},
+      {"name": "SQL", "priority": 3, "tags": ["data", "practical"]},
+      {"name": "REST APIs", "priority": 4, "tags": ["web", "backend", "practical"]},
+      {"name": "Git", "priority": 3, "tags": ["tools", "foundational"]}
+    ]
+  },
+  "Cybersecurity Analyst": {
+    "description": "Protects systems and networks from security threats.",
+    "typical_hours_per_week": 10,
+    "required_skills": [
+      {"name": "Networking Fundamentals", "priority": 5, "tags": ["security", "foundational"]},
+      {"name": "Operating Systems", "priority": 4, "tags": ["security", "foundational"]},
+      {"name": "Python", "priority": 3, "tags": ["programming", "foundational"]},
+      {"name": "Linux Administration", "priority": 4, "tags": ["security", "practical"]},
+      {"name": "Security Fundamentals", "priority": 5, "tags": ["security", "theory"]},
+      {"name": "Network Security", "priority": 5, "tags": ["security", "core"]},
+      {"name": "Ethical Hacking", "priority": 4, "tags": ["security", "advanced"]},
+      {"name": "Cryptography", "priority": 3, "tags": ["security", "theory"]}
+    ]
+  }
+}
