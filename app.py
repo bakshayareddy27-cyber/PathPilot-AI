@@ -22,280 +22,318 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ----------------------------------------------------------------------
-# Design system — tokens + global styling
-# ----------------------------------------------------------------------
+# ======================================================================
+# DESIGN SYSTEM
+# ======================================================================
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
+
+    /* ---------------------------------------------------------------
+       1. DESIGN TOKENS
+    --------------------------------------------------------------- */
     :root {
-        --bg: #0B1020;
-        --surface: #111827;
-        --surface-elevated: #172033;
-        --border: rgba(255,255,255,0.08);
-        --border-strong: rgba(255,255,255,0.14);
+        --bg: #0A0E1A;
+        --bg-atmosphere: radial-gradient(circle at 20% 0%, rgba(99,102,241,0.10) 0%, transparent 45%),
+                          radial-gradient(circle at 85% 15%, rgba(34,211,238,0.06) 0%, transparent 40%);
+        --surface: #10141F;
+        --surface-raised: #151A28;
+        --surface-elevated: #1A2033;
+        --border: rgba(255,255,255,0.07);
+        --border-strong: rgba(255,255,255,0.13);
+
         --indigo: #6366F1;
+        --indigo-soft: rgba(99,102,241,0.12);
         --violet: #8B5CF6;
         --cyan: #22D3EE;
-        --text-primary: #F8FAFC;
-        --text-muted: #94A3B8;
-        --text-faint: #64748B;
+
+        --text-primary: #F4F6FB;
+        --text-secondary: #B4BCCC;
+        --text-muted: #8992A6;
+        --text-faint: #5B6478;
+
         --success: #34D399;
-        --warning: #FBBF24;
-        --danger: #F87171;
-        --font-display: 'Sora', sans-serif;
+        --warning: #F5B942;
+        --danger: #F0685C;
+
+        --font-display: 'Plus Jakarta Sans', sans-serif;
         --font-body: 'Inter', sans-serif;
         --font-mono: 'JetBrains Mono', monospace;
+
+        --space-xs: 0.4rem;
+        --space-sm: 0.75rem;
+        --space-md: 1.25rem;
+        --space-lg: 2rem;
+        --space-xl: 3rem;
+
+        --radius-sm: 8px;
+        --radius-md: 12px;
+        --radius-lg: 16px;
     }
 
+    /* ---------------------------------------------------------------
+       2. GLOBAL STYLES
+    --------------------------------------------------------------- */
     html, body, .stApp, [class*="css"] {
         font-family: var(--font-body) !important;
     }
-    .stApp { background: var(--bg); color: var(--text-primary); }
-    h1, h2, h3, h4, .pp-display { font-family: var(--font-display) !important; letter-spacing: -0.01em; }
-    p, span, label, div { color: inherit; }
-
+    .stApp {
+        background-color: var(--bg);
+        background-image: var(--bg-atmosphere);
+        background-attachment: fixed;
+        color: var(--text-primary);
+    }
+    h1, h2, h3, h4, .pp-display { font-family: var(--font-display) !important; letter-spacing: -0.015em; }
     #MainMenu, footer, header { visibility: hidden; }
-    .block-container { padding-top: 2rem; padding-bottom: 3rem; max-width: 1180px; }
+    hr { border-color: var(--border); }
 
-    /* ---------- Sidebar ---------- */
+    /* ---------------------------------------------------------------
+       3. APP SHELL
+    --------------------------------------------------------------- */
+    .block-container { padding-top: 2.2rem; padding-bottom: 3.5rem; max-width: 1160px; }
+
+    .pp-page-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding-bottom: var(--space-lg); margin-bottom: var(--space-lg);
+        border-bottom: 1px solid var(--border);
+        flex-wrap: wrap; gap: var(--space-md);
+    }
+    .pp-page-header h1 { font-size: 1.65rem; font-weight: 700; margin: 0 0 4px 0; }
+    .pp-page-header p { color: var(--text-muted); font-size: 0.93rem; margin: 0; max-width: 460px; }
+
+    .pp-status-chip {
+        background: var(--surface-raised); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 0.85rem 1.2rem; text-align: right; min-width: 150px;
+    }
+    .pp-status-label { font-size: 0.65rem; letter-spacing: 0.1em; color: var(--text-faint); text-transform: uppercase; }
+    .pp-status-value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 600; margin-top: 3px; }
+    .pp-status-sub { color: var(--text-faint); font-size: 0.75rem; font-family: var(--font-mono); }
+
+    /* ---------------------------------------------------------------
+       4. SIDEBAR
+    --------------------------------------------------------------- */
     section[data-testid="stSidebar"] {
-        background: var(--surface);
-        border-right: 1px solid var(--border);
+        background: var(--surface); border-right: 1px solid var(--border);
     }
     section[data-testid="stSidebar"] .block-container { padding-top: 1.6rem; }
 
-    .pp-brand {
-        display: flex; align-items: center; gap: 10px;
-        margin-bottom: 0.2rem;
-    }
+    .pp-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.15rem; }
     .pp-brand-mark {
         width: 30px; height: 30px; border-radius: 8px;
         background: linear-gradient(135deg, var(--indigo), var(--violet));
         display: flex; align-items: center; justify-content: center;
         font-size: 15px; color: white; font-weight: 700;
     }
-    .pp-brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; color: var(--text-primary); }
+    .pp-brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
     .pp-brand-sub {
-        font-size: 0.66rem; letter-spacing: 0.14em; color: var(--text-faint);
-        text-transform: uppercase; margin: 0.1rem 0 1.4rem 40px;
+        font-size: 0.64rem; letter-spacing: 0.15em; color: var(--text-faint);
+        text-transform: uppercase; margin: 0.1rem 0 1.5rem 40px;
     }
 
-    section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 2px; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 1px; }
     section[data-testid="stSidebar"] div[role="radiogroup"] label {
-        background: transparent;
-        border-radius: 8px;
-        padding: 8px 12px !important;
-        margin-bottom: 2px;
-        transition: background 0.15s ease;
-        width: 100%;
+        border-radius: var(--radius-sm); padding: 8px 12px !important;
+        margin-bottom: 1px; transition: background 0.15s ease; width: 100%;
     }
-    section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-        background: rgba(99,102,241,0.08);
-    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { background: rgba(99,102,241,0.07); }
     section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-        background: rgba(99,102,241,0.14);
-        border-left: 2px solid var(--indigo);
+        background: var(--indigo-soft); border-left: 2px solid var(--indigo);
     }
     section[data-testid="stSidebar"] div[role="radiogroup"] input { accent-color: var(--indigo); }
-    section[data-testid="stSidebar"] div[role="radiogroup"] label p {
-        font-size: 0.88rem; color: var(--text-muted); font-weight: 500;
-    }
-    section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p {
-        color: var(--text-primary);
-    }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label p { font-size: 0.87rem; color: var(--text-muted); font-weight: 500; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: var(--text-primary); }
 
-    .pp-user-card {
-        border-top: 1px solid var(--border);
-        margin-top: 1.4rem; padding-top: 1.1rem;
-    }
-    .pp-user-name { font-weight: 600; color: var(--text-primary); font-size: 0.92rem; }
+    .pp-user-card { border-top: 1px solid var(--border); margin-top: var(--space-md); padding-top: var(--space-sm); }
+    .pp-user-name { font-weight: 600; font-size: 0.92rem; }
     .pp-user-role { color: var(--text-faint); font-size: 0.76rem; margin-top: 1px; }
 
-    /* ---------- Buttons ---------- */
-    .stButton > button {
-        background: var(--surface-elevated);
-        color: var(--text-primary);
-        border: 1px solid var(--border-strong);
-        border-radius: 9px;
-        font-weight: 500;
-        transition: all 0.15s ease;
-        padding: 0.5rem 1rem;
+    /* ---------------------------------------------------------------
+       5. TYPOGRAPHY HELPERS
+    --------------------------------------------------------------- */
+    .pp-eyebrow {
+        font-size: 0.7rem; letter-spacing: 0.13em; text-transform: uppercase;
+        color: var(--cyan); font-weight: 600; margin-bottom: 0.4rem;
     }
-    .stButton > button:hover {
-        border-color: var(--indigo);
-        background: rgba(99,102,241,0.10);
-        color: var(--text-primary);
-    }
-    div[data-testid="stFormSubmitButton"] > button,
-    .pp-primary-btn button {
-        background: linear-gradient(135deg, var(--indigo), var(--violet)) !important;
-        border: none !important;
-        color: white !important;
-        font-weight: 600 !important;
-        box-shadow: 0 4px 18px rgba(99,102,241,0.35);
-    }
-    div[data-testid="stFormSubmitButton"] > button:hover { opacity: 0.92; }
+    .pp-section-title { font-size: 1.3rem; font-weight: 700; margin: 0 0 var(--space-md) 0; }
 
-    /* ---------- Cards ---------- */
+    /* ---------------------------------------------------------------
+       6. BUTTONS
+    --------------------------------------------------------------- */
+    .stButton > button {
+        background: var(--surface-elevated); color: var(--text-primary);
+        border: 1px solid var(--border-strong); border-radius: 9px;
+        font-weight: 500; padding: 0.5rem 1rem; transition: all 0.15s ease;
+    }
+    .stButton > button:hover { border-color: var(--indigo); background: rgba(99,102,241,0.10); }
+
+    div[data-testid="stFormSubmitButton"] > button, .pp-primary-btn button {
+        background: linear-gradient(135deg, var(--indigo), var(--violet)) !important;
+        border: none !important; color: white !important; font-weight: 600 !important;
+        box-shadow: 0 6px 20px rgba(99,102,241,0.28);
+    }
+    div[data-testid="stFormSubmitButton"] > button:hover, .pp-primary-btn button:hover { opacity: 0.93; }
+
+    /* ---------------------------------------------------------------
+       7. CARDS
+    --------------------------------------------------------------- */
     .pp-card {
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 1.3rem 1.5rem;
+        background: var(--surface-raised); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 1.35rem 1.5rem;
         transition: border-color 0.15s ease, transform 0.15s ease;
     }
-    .pp-card:hover { border-color: var(--border-strong); transform: translateY(-1px); }
+    .pp-card:hover { border-color: var(--border-strong); }
 
-    .pp-eyebrow {
-        font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase;
-        color: var(--cyan); font-weight: 600; margin-bottom: 0.35rem;
-    }
-
-    /* ---------- Hero ---------- */
-    .pp-hero {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 1.6rem 0 1.8rem 0; border-bottom: 1px solid var(--border);
-        margin-bottom: 1.8rem; flex-wrap: wrap; gap: 1rem;
-    }
-    .pp-hero h1 { font-size: 1.7rem; color: var(--text-primary); margin: 0 0 0.3rem 0; font-weight: 700; }
-    .pp-hero p { color: var(--text-muted); font-size: 0.94rem; margin: 0; max-width: 480px; }
-    .pp-status-chip {
-        background: var(--surface-elevated); border: 1px solid var(--border);
-        border-radius: 12px; padding: 0.9rem 1.3rem; text-align: right; min-width: 160px;
-    }
-    .pp-status-label { font-size: 0.68rem; letter-spacing: 0.1em; color: var(--text-faint); text-transform: uppercase; }
-    .pp-status-value { font-family: var(--font-mono); font-size: 1.5rem; font-weight: 600; margin-top: 2px; }
-
-    /* ---------- Landing hero ---------- */
-    .pp-landing-hero {
-        text-align: center; padding: 3.2rem 1rem 2.4rem 1rem;
-    }
+    /* ---------------------------------------------------------------
+       8. LANDING PAGE
+    --------------------------------------------------------------- */
+    .pp-landing-hero { text-align: center; padding: 3.4rem 1rem 2.2rem 1rem; }
     .pp-landing-badge {
-        display: inline-flex; align-items: center; gap: 8px;
+        display: inline-flex; align-items: center; gap: 7px;
         border: 1px solid var(--border-strong); border-radius: 999px;
-        padding: 0.4rem 1rem; font-size: 0.78rem; color: var(--cyan);
-        margin-bottom: 1.4rem; font-family: var(--font-mono);
+        padding: 0.4rem 1rem; font-size: 0.76rem; color: var(--cyan);
+        margin-bottom: var(--space-md); font-family: var(--font-mono);
+        background: rgba(34,211,238,0.05);
     }
     .pp-landing-hero h1 {
-        font-size: 2.6rem; font-weight: 800; margin-bottom: 0.7rem;
-        background: linear-gradient(135deg, #F8FAFC 30%, #A5B4FC 100%);
+        font-size: 2.75rem; font-weight: 800; margin-bottom: 0.7rem; line-height: 1.1;
+        background: linear-gradient(135deg, #F4F6FB 30%, #B4BCFF 100%);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
     }
-    .pp-landing-hero p.pp-tagline { color: var(--text-muted); font-size: 1.05rem; max-width: 560px; margin: 0 auto; }
+    .pp-landing-hero p.pp-tagline { color: var(--text-secondary); font-size: 1.08rem; max-width: 560px; margin: 0 auto; }
+    .pp-feature-card {
+        background: var(--surface-raised); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 1.4rem 1.5rem; height: 100%;
+        transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+    .pp-feature-card:hover { border-color: rgba(99,102,241,0.4); transform: translateY(-2px); }
+    .pp-feature-card b { font-size: 1rem; }
+    .pp-feature-card p { color: var(--text-muted); font-size: 0.87rem; margin-top: 6px; }
 
-    /* ---------- Metric cards ---------- */
+    /* ---------------------------------------------------------------
+       9. ONBOARDING / PROFILING
+    --------------------------------------------------------------- */
+    .pp-step-header { display: flex; align-items: center; gap: 10px; margin: 1.6rem 0 0.8rem 0; }
+    .pp-step-num {
+        width: 24px; height: 24px; border-radius: 50%; background: var(--surface-elevated);
+        border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-mono); font-size: 0.74rem; color: var(--cyan); flex-shrink: 0;
+    }
+    .pp-step-title { font-weight: 600; font-size: 0.98rem; }
+    .pp-onboarding-header { text-align: center; margin-bottom: var(--space-lg); }
+
+    /* ---------------------------------------------------------------
+       10. DASHBOARD / METRICS
+    --------------------------------------------------------------- */
     .pp-metric-card {
-        background: var(--surface); border: 1px solid var(--border);
-        border-radius: 12px; padding: 1.1rem 1.3rem;
+        background: var(--surface-raised); border: 1px solid var(--border);
+        border-radius: var(--radius-md); padding: 1.15rem 1.3rem;
         transition: border-color 0.15s ease, transform 0.15s ease;
     }
     .pp-metric-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
-    .pp-metric-label { font-size: 0.74rem; color: var(--text-faint); font-weight: 500; }
-    .pp-metric-value { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 600; margin: 0.15rem 0; color: var(--text-primary); }
-    .pp-metric-trend { font-size: 0.76rem; font-weight: 500; }
+    .pp-metric-label { font-size: 0.73rem; color: var(--text-faint); font-weight: 500; }
+    .pp-metric-value { font-family: var(--font-mono); font-size: 1.85rem; font-weight: 600; margin: 0.15rem 0; }
+    .pp-metric-desc { font-size: 0.76rem; font-weight: 500; }
     .trend-good { color: var(--success); }
     .trend-warn { color: var(--warning); }
     .trend-bad { color: var(--danger); }
     .trend-neutral { color: var(--text-faint); }
 
-    /* ---------- NBA hero card ---------- */
-    .pp-nba-wrap { position: relative; margin-bottom: 1.2rem; }
-    .pp-nba-glow {
-        position: absolute; inset: -2px; border-radius: 18px;
-        background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(34,211,238,0.18));
-        filter: blur(18px); z-index: 0; opacity: 0.55;
-    }
+    /* ---------------------------------------------------------------
+       11. NEXT BEST ACTION
+    --------------------------------------------------------------- */
     .pp-nba-card {
-        position: relative; z-index: 1;
-        background: linear-gradient(160deg, #141a2e 0%, #171b30 100%);
-        border: 1px solid rgba(139,92,246,0.35);
-        border-radius: 16px; padding: 2rem 2.2rem;
+        background: linear-gradient(160deg, #12172A 0%, #151B30 100%);
+        border: 1px solid rgba(139,92,246,0.28);
+        border-radius: var(--radius-lg); padding: 2rem 2.2rem; margin-bottom: var(--space-md);
     }
     .pp-nba-eyebrow { font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.14em; color: var(--cyan); text-transform: uppercase; margin-bottom: 0.5rem; }
-    .pp-nba-skill { font-family: var(--font-display); font-size: 2rem; font-weight: 700; color: var(--text-primary); margin: 0 0 1.1rem 0; }
+    .pp-nba-skill { font-family: var(--font-display); font-size: 1.95rem; font-weight: 700; margin: 0 0 1.15rem 0; }
     .pp-nba-stats { display: flex; gap: 2.4rem; flex-wrap: wrap; }
-    .pp-nba-stat-label { font-size: 0.72rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
-    .pp-nba-stat-value { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 600; color: var(--text-primary); margin-top: 2px; }
+    .pp-nba-stat-label { font-size: 0.71rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+    .pp-nba-stat-value { font-family: var(--font-mono); font-size: 1.22rem; font-weight: 600; margin-top: 2px; }
+    .pp-nba-why { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--border); }
+    .pp-insight-row { display: flex; align-items: flex-start; gap: 10px; padding: 0.4rem 0; }
+    .pp-insight-check { color: var(--success); font-size: 0.92rem; margin-top: 1px; }
+    .pp-insight-text { color: var(--text-secondary); font-size: 0.89rem; }
 
-    .pp-insight-row { display: flex; align-items: flex-start; gap: 10px; padding: 0.45rem 0; }
-    .pp-insight-check { color: var(--success); font-size: 0.95rem; margin-top: 1px; }
-    .pp-insight-text { color: var(--text-muted); font-size: 0.9rem; }
-
-    /* ---------- Score bars ---------- */
     .pp-score-row { margin-bottom: 0.85rem; }
-    .pp-score-top { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 5px; }
+    .pp-score-top { display: flex; justify-content: space-between; font-size: 0.84rem; margin-bottom: 5px; }
     .pp-score-name { color: var(--text-muted); }
-    .pp-score-num { font-family: var(--font-mono); color: var(--text-primary); font-weight: 600; }
-    .pp-score-track { background: var(--surface-elevated); border-radius: 6px; height: 7px; overflow: hidden; }
+    .pp-score-num { font-family: var(--font-mono); font-weight: 600; }
+    .pp-score-track { background: var(--surface-elevated); border-radius: 6px; height: 6px; overflow: hidden; }
     .pp-score-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--indigo), var(--cyan)); }
 
-    /* ---------- Badges / pills ---------- */
     .pp-badge {
         display: inline-block; padding: 0.28rem 0.8rem; border-radius: 999px;
-        font-size: 0.75rem; font-weight: 600; font-family: var(--font-mono);
+        font-size: 0.74rem; font-weight: 600; font-family: var(--font-mono);
     }
-    .badge-healthy { background: rgba(52,211,153,0.12); color: var(--success); border: 1px solid rgba(52,211,153,0.3); }
-    .badge-atrisk { background: rgba(251,191,36,0.12); color: var(--warning); border: 1px solid rgba(251,191,36,0.3); }
-    .badge-critical { background: rgba(248,113,113,0.12); color: var(--danger); border: 1px solid rgba(248,113,113,0.3); }
+    .badge-healthy { background: rgba(52,211,153,0.10); color: var(--success); border: 1px solid rgba(52,211,153,0.25); }
+    .badge-atrisk { background: rgba(245,185,66,0.10); color: var(--warning); border: 1px solid rgba(245,185,66,0.25); }
+    .badge-critical { background: rgba(240,104,92,0.10); color: var(--danger); border: 1px solid rgba(240,104,92,0.25); }
 
-    /* ---------- Risk cards ---------- */
+    .pp-chip {
+        display: inline-block; background: var(--surface-elevated);
+        border: 1px solid var(--border-strong); border-radius: 999px;
+        padding: 0.4rem 0.9rem; font-size: 0.81rem; color: var(--text-muted);
+        margin: 0 6px 6px 0; transition: border-color 0.15s ease;
+    }
+    .pp-chip:hover { border-color: var(--indigo); color: var(--text-primary); }
+
+    /* ---------------------------------------------------------------
+       12. ROADMAP  (see ui/roadmap.py for structural markup)
+    --------------------------------------------------------------- */
+    .pp-timeline-rail { display: flex; flex-direction: column; align-items: center; width: 28px; }
+    .pp-timeline-dot {
+        width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
+        border: 2px solid var(--text-faint); color: var(--text-faint); background: var(--bg); flex-shrink: 0;
+    }
+    .dot-inprogress { border-color: var(--indigo); color: var(--indigo); background: var(--indigo-soft); }
+    .dot-completed { border-color: var(--success); color: var(--success); background: rgba(52,211,153,0.10); }
+    .pp-timeline-line { width: 2px; flex: 1; background: var(--border-strong); margin: 4px 0; min-height: 22px; }
+    .pp-step-skill { font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; margin-bottom: 2px; }
+    .pp-step-meta { font-size: 0.79rem; color: var(--text-faint); margin-bottom: 0.7rem; }
+
+    /* ---------------------------------------------------------------
+       13. PATH HEALTH
+    --------------------------------------------------------------- */
     .pp-risk-card {
-        background: var(--surface); border: 1px solid var(--border);
+        background: var(--surface-raised); border: 1px solid var(--border);
         border-left: 3px solid var(--text-faint);
         border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.7rem;
     }
     .pp-risk-high { border-left-color: var(--danger); }
     .pp-risk-medium { border-left-color: var(--warning); }
     .pp-risk-low { border-left-color: var(--cyan); }
-    .pp-risk-severity { font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
+    .pp-risk-severity { font-size: 0.67rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
     .pp-risk-high .pp-risk-severity { color: var(--danger); }
     .pp-risk-medium .pp-risk-severity { color: var(--warning); }
     .pp-risk-low .pp-risk-severity { color: var(--cyan); }
-    .pp-risk-title { font-weight: 600; font-size: 0.98rem; margin: 3px 0 5px 0; color: var(--text-primary); }
-    .pp-risk-msg { color: var(--text-muted); font-size: 0.88rem; margin-bottom: 6px; }
-    .pp-risk-action { color: var(--text-faint); font-size: 0.82rem; }
+    .pp-risk-title { font-weight: 600; font-size: 0.97rem; margin: 3px 0 5px 0; }
+    .pp-risk-msg { color: var(--text-muted); font-size: 0.87rem; margin-bottom: 6px; }
+    .pp-risk-action { color: var(--text-faint); font-size: 0.81rem; }
     .pp-risk-action b { color: var(--text-muted); }
 
-    /* ---------- Chips ---------- */
-    .pp-chip {
-        display: inline-block; background: var(--surface-elevated);
-        border: 1px solid var(--border-strong); border-radius: 999px;
-        padding: 0.4rem 0.9rem; font-size: 0.82rem; color: var(--text-muted);
-        margin: 0 6px 6px 0;
+    /* ---------------------------------------------------------------
+       14. AI ASSISTANT
+    --------------------------------------------------------------- */
+    .pp-assistant-answer {
+        background: var(--surface-raised); border: 1px solid rgba(139,92,246,0.25);
+        border-radius: var(--radius-md); padding: 1.2rem 1.4rem; margin-top: var(--space-sm);
     }
 
-    /* ---------- Timeline (roadmap) ---------- */
-    .pp-timeline-item { display: flex; gap: 1.1rem; }
-    .pp-timeline-rail { display: flex; flex-direction: column; align-items: center; width: 28px; }
-    .pp-timeline-dot {
-        width: 26px; height: 26px; border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-family: var(--font-mono); font-size: 0.72rem; font-weight: 700;
-        border: 2px solid var(--text-faint); color: var(--text-faint); background: var(--bg);
-        flex-shrink: 0;
+    /* ---------------------------------------------------------------
+       15. RESPONSIVE ADJUSTMENTS
+    --------------------------------------------------------------- */
+    @media (max-width: 768px) {
+        .pp-landing-hero h1 { font-size: 2.1rem; }
+        .pp-nba-skill { font-size: 1.55rem; }
+        .pp-nba-stats { gap: 1.3rem; }
+        .pp-page-header { flex-direction: column; align-items: flex-start; }
+        .pp-status-chip { text-align: left; }
     }
-    .dot-inprogress { border-color: var(--indigo); color: var(--indigo); background: rgba(99,102,241,0.12); }
-    .dot-completed { border-color: var(--success); color: var(--success); background: rgba(52,211,153,0.12); }
-    .pp-timeline-line { width: 2px; flex: 1; background: var(--border-strong); margin: 4px 0; min-height: 24px; }
-    .pp-timeline-body { flex: 1; padding-bottom: 1.6rem; }
-    .pp-step-skill { font-family: var(--font-display); font-size: 1.08rem; font-weight: 600; color: var(--text-primary); margin-bottom: 2px; }
-    .pp-step-meta { font-size: 0.8rem; color: var(--text-faint); margin-bottom: 0.7rem; }
-
-    /* ---------- Step markers (profiling) ---------- */
-    .pp-step-header {
-        display: flex; align-items: center; gap: 10px; margin: 1.4rem 0 0.7rem 0;
-    }
-    .pp-step-num {
-        width: 24px; height: 24px; border-radius: 50%; background: var(--surface-elevated);
-        border: 1px solid var(--border-strong); display: flex; align-items: center; justify-content: center;
-        font-family: var(--font-mono); font-size: 0.75rem; color: var(--cyan);
-    }
-    .pp-step-title { font-weight: 600; color: var(--text-primary); font-size: 0.98rem; }
-
-    hr { border-color: var(--border); }
     </style>
     """,
     unsafe_allow_html=True,
@@ -306,11 +344,11 @@ st.markdown(
 # ----------------------------------------------------------------------
 def init_session_state():
     defaults = {
-        "stage": "welcome",          # welcome -> profiling -> app
+        "stage": "welcome",
         "profile": None,
         "engine_output": None,
         "adaptation_state": AdaptationState(),
-        "roadmap_progress": {},       # skill_name -> status
+        "roadmap_progress": {},
         "nav_section": "Overview",
     }
     for key, val in defaults.items():
@@ -367,7 +405,6 @@ def get_career_options():
 
 
 def run_engine_pipeline(profile):
-    """Runs all deterministic engine calculations once and centralizes output."""
     output = {
         "skill_gap": safe_call(engine.analyze_skill_gap, profile),
         "readiness": safe_call(engine.calculate_readiness_score, profile),
@@ -405,7 +442,7 @@ def render_welcome():
 
     st.markdown(
         """
-        <p style="text-align:center; color:var(--text-muted); max-width:640px; margin:0 auto 2rem auto; font-size:0.95rem;">
+        <p style="text-align:center; color:var(--text-muted); max-width:620px; margin:0 auto 2.2rem auto; font-size:0.95rem; line-height:1.6;">
         PathPilot continuously analyzes your skills, career goal, prerequisites, available time,
         experience level and interests — then decides, with transparent reasoning, exactly what
         to learn next.
@@ -417,23 +454,20 @@ def render_welcome():
     col1, col2, col3 = st.columns(3)
     with col1:
         st.markdown(
-            '<div class="pp-card"><div class="pp-eyebrow">01 · Decide</div>'
-            '<b>Next Best Action</b><p style="color:var(--text-muted); font-size:0.88rem; margin-top:6px;">'
-            'A single scored recommendation, not just a list.</p></div>',
+            '<div class="pp-feature-card"><div class="pp-eyebrow">01 · DECIDE</div>'
+            '<b>Next Best Action</b><p>A single scored recommendation, not just a list.</p></div>',
             unsafe_allow_html=True,
         )
     with col2:
         st.markdown(
-            '<div class="pp-card"><div class="pp-eyebrow">02 · Validate</div>'
-            '<b>Prerequisite Intelligence</b><p style="color:var(--text-muted); font-size:0.88rem; margin-top:6px;">'
-            'Recursive root-blocker detection prevents unrealistic jumps.</p></div>',
+            '<div class="pp-feature-card"><div class="pp-eyebrow">02 · VALIDATE</div>'
+            '<b>Prerequisite Intelligence</b><p>Recursive root-blocker detection prevents unrealistic jumps.</p></div>',
             unsafe_allow_html=True,
         )
     with col3:
         st.markdown(
-            '<div class="pp-card"><div class="pp-eyebrow">03 · Monitor</div>'
-            '<b>Path Health</b><p style="color:var(--text-muted); font-size:0.88rem; margin-top:6px;">'
-            'Healthy, At Risk or Critical — based on real signals.</p></div>',
+            '<div class="pp-feature-card"><div class="pp-eyebrow">03 · MONITOR</div>'
+            '<b>Path Health</b><p>Healthy, At Risk or Critical — based on real signals.</p></div>',
             unsafe_allow_html=True,
         )
 
@@ -454,10 +488,11 @@ def render_welcome():
 # ----------------------------------------------------------------------
 def render_profiling():
     st.markdown(
-        '<div class="pp-eyebrow" style="text-align:center;">ONBOARDING</div>'
-        '<h2 style="text-align:center; margin-top:0;">Let\'s build your path</h2>'
-        '<p style="text-align:center; color:var(--text-muted); margin-bottom:1.6rem;">'
-        'Three quick steps. Every answer sharpens your recommendations.</p>',
+        '<div class="pp-onboarding-header">'
+        '<div class="pp-eyebrow" style="justify-content:center; display:flex;">ONBOARDING</div>'
+        '<h2 style="margin:0.2rem 0;">Let\'s build your path</h2>'
+        '<p style="color:var(--text-muted); margin:0;">Three quick steps. Every answer sharpens your recommendations.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
@@ -558,7 +593,7 @@ def render_profiling():
 # NEXT BEST ACTION SECTION
 # ----------------------------------------------------------------------
 def render_next_best_action():
-    st.markdown('<div class="pp-eyebrow">DECISION ENGINE</div><h2 style="margin-top:0;">Next Best Action</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="pp-eyebrow">DECISION ENGINE</div><h2 class="pp-section-title">Next Best Action</h2>', unsafe_allow_html=True)
 
     engine_output = st.session_state.engine_output or {}
     nba = engine_output.get("next_best_action")
@@ -579,20 +614,17 @@ def render_next_best_action():
 
     st.markdown(
         f"""
-        <div class="pp-nba-wrap">
-            <div class="pp-nba-glow"></div>
-            <div class="pp-nba-card">
-                <div class="pp-nba-eyebrow">PathPilot Recommends</div>
-                <div class="pp-nba-skill">{nba.get('skill', 'N/A')}</div>
-                <div class="pp-nba-stats">
-                    <div><div class="pp-nba-stat-label">Confidence Score</div><div class="pp-nba-stat-value">{nba.get('score', 'N/A')}</div></div>
-                    <div><div class="pp-nba-stat-label">Estimated Time</div><div class="pp-nba-stat-value">{nba.get('est_hours', 'N/A')} hrs</div></div>
-                    <div><div class="pp-nba-stat-label">Difficulty</div><div class="pp-nba-stat-value">{nba.get('difficulty', 'N/A')}</div></div>
-                </div>
-                <div style="margin-top:1.4rem; padding-top:1.2rem; border-top:1px solid var(--border);">
-                    <div class="pp-eyebrow" style="margin-bottom:0.6rem;">WHY THIS?</div>
-                    {reasons_html}
-                </div>
+        <div class="pp-nba-card">
+            <div class="pp-nba-eyebrow">PathPilot Recommends</div>
+            <div class="pp-nba-skill">{nba.get('skill', 'N/A')}</div>
+            <div class="pp-nba-stats">
+                <div><div class="pp-nba-stat-label">Confidence Score</div><div class="pp-nba-stat-value">{nba.get('score', 'N/A')}</div></div>
+                <div><div class="pp-nba-stat-label">Estimated Time</div><div class="pp-nba-stat-value">{nba.get('est_hours', 'N/A')} hrs</div></div>
+                <div><div class="pp-nba-stat-label">Difficulty</div><div class="pp-nba-stat-value">{nba.get('difficulty', 'N/A')}</div></div>
+            </div>
+            <div class="pp-nba-why">
+                <div class="pp-eyebrow">WHY THIS?</div>
+                {reasons_html}
             </div>
         </div>
         """,
@@ -601,7 +633,7 @@ def render_next_best_action():
 
     breakdown = nba.get("score_breakdown", {})
     if breakdown:
-        st.markdown('<div class="pp-card" style="margin-top:0.4rem;">', unsafe_allow_html=True)
+        st.markdown('<div class="pp-card">', unsafe_allow_html=True)
         st.markdown('<div class="pp-eyebrow">SCORE BREAKDOWN</div>', unsafe_allow_html=True)
         rows_html = ""
         for factor, value in breakdown.items():
@@ -631,7 +663,7 @@ def render_next_best_action():
 
 
 def render_adaptive_feedback(nba):
-    st.markdown('<p style="color:var(--text-muted); font-size:0.88rem; margin:1.2rem 0 0.5rem 0;">How does this feel for you?</p>', unsafe_allow_html=True)
+    st.markdown('<p style="color:var(--text-muted); font-size:0.87rem; margin:1.3rem 0 0.5rem 0;">How does this feel for you?</p>', unsafe_allow_html=True)
     col1, col2, col3 = st.columns(3)
     skill_name = nba.get("skill")
 
@@ -680,8 +712,8 @@ def render_adaptive_feedback(nba):
 def render_ai_assistant():
     st.markdown(
         '<div class="pp-eyebrow">ASK PATHPILOT</div>'
-        '<h2 style="margin-top:0;">AI Assistant</h2>'
-        '<p style="color:var(--text-muted); margin-top:-0.6rem;">'
+        '<h2 class="pp-section-title" style="margin-bottom:0.2rem;">AI Assistant</h2>'
+        '<p style="color:var(--text-muted); margin-top:0; margin-bottom:1.3rem;">'
         'Understand your recommendations, roadmap, blockers and progress.</p>',
         unsafe_allow_html=True,
     )
@@ -697,9 +729,11 @@ def render_ai_assistant():
     if nba:
         with st.spinner("Preparing explanation..."):
             auto_explanation = safe_call(assistant.explain_next_best_action, profile, nba)
-        st.markdown('<div class="pp-card"><div class="pp-eyebrow">WHY YOUR NEXT STEP IS RECOMMENDED</div>' +
-                    f'<p style="color:var(--text-muted); font-size:0.92rem; margin-top:6px;">{auto_explanation or "Explanation unavailable right now."}</p></div>',
-                    unsafe_allow_html=True)
+        st.markdown(
+            '<div class="pp-card"><div class="pp-eyebrow">WHY YOUR NEXT STEP IS RECOMMENDED</div>'
+            f'<p style="color:var(--text-secondary); font-size:0.92rem; margin-top:6px; margin-bottom:0;">{auto_explanation or "Explanation unavailable right now."}</p></div>',
+            unsafe_allow_html=True,
+        )
         st.write("")
 
     question = st.text_input(
@@ -719,9 +753,9 @@ def render_ai_assistant():
         with st.spinner("Thinking..."):
             answer = safe_call(assistant.answer_path_question, profile, engine_output, question)
         st.markdown(
-            '<div class="pp-card" style="border-color: rgba(139,92,246,0.3); margin-top:0.8rem;">'
+            '<div class="pp-assistant-answer">'
             '<div class="pp-eyebrow">ANSWER</div>'
-            f'<p style="color:var(--text-primary); font-size:0.94rem; margin-top:6px;">{answer or "I couldn\'t generate an answer right now."}</p></div>',
+            f'<p style="color:var(--text-primary); font-size:0.93rem; margin-top:6px; margin-bottom:0;">{answer or "I couldn\'t generate an answer right now."}</p></div>',
             unsafe_allow_html=True,
         )
 
@@ -748,15 +782,9 @@ def render_app():
             unsafe_allow_html=True,
         )
 
-        section = st.radio(
-            "Navigate",
-            ["Overview", "Next Action", "Learning Roadmap", "Path Health", "AI Assistant"],
-            index=["Overview", "Next Action", "Learning Roadmap", "Path Health", "AI Assistant"].index(
-                st.session_state.nav_section
-            ) if st.session_state.nav_section in
-            ["Overview", "Next Action", "Learning Roadmap", "Path Health", "AI Assistant"] else 0,
-            label_visibility="collapsed",
-        )
+        nav_options = ["Overview", "Next Action", "Learning Roadmap", "Path Health", "AI Assistant"]
+        current_index = nav_options.index(st.session_state.nav_section) if st.session_state.nav_section in nav_options else 0
+        section = st.radio("Navigate", nav_options, index=current_index, label_visibility="collapsed")
         st.session_state.nav_section = section
 
         st.markdown(
@@ -781,7 +809,7 @@ def render_app():
 
     st.markdown(
         f"""
-        <div class="pp-hero">
+        <div class="pp-page-header">
             <div>
                 <h1>Good to see you, {getattr(profile, 'name', 'there')} 👋</h1>
                 <p>Your learning path is being continuously analyzed based on your skills, goals, timeline and progress.</p>
@@ -789,7 +817,7 @@ def render_app():
             <div class="pp-status-chip">
                 <div class="pp-status-label">● Path Status</div>
                 <div class="pp-status-value">{status}</div>
-                <div style="color:var(--text-faint); font-size:0.78rem; font-family: var(--font-mono);">{score} / 100</div>
+                <div class="pp-status-sub">{score} / 100</div>
             </div>
         </div>
         """,
@@ -809,7 +837,7 @@ def render_app():
 
 
 def render_path_health(engine_output):
-    st.markdown('<div class="pp-eyebrow">DIAGNOSTICS</div><h2 style="margin-top:0;">Path Health</h2>', unsafe_allow_html=True)
+    st.markdown('<div class="pp-eyebrow">DIAGNOSTICS</div><h2 class="pp-section-title">Path Health</h2>', unsafe_allow_html=True)
     health = engine_output.get("path_health") or {}
     risks = engine_output.get("risks") or []
 
@@ -829,27 +857,27 @@ def render_path_health(engine_output):
     with gauge_col:
         try:
             import plotly.graph_objects as go
-            gauge_color = {"Healthy": "#34D399", "At Risk": "#FBBF24", "Critical": "#F87171"}.get(status, "#6366F1")
+            gauge_color = {"Healthy": "#34D399", "At Risk": "#F5B942", "Critical": "#F0685C"}.get(status, "#6366F1")
             fig = go.Figure(go.Indicator(
                 mode="gauge+number",
                 value=score_num,
-                number={"suffix": "", "font": {"size": 40, "color": "#F8FAFC", "family": "JetBrains Mono"}},
+                number={"font": {"size": 38, "color": "#F4F6FB", "family": "JetBrains Mono"}},
                 gauge={
-                    "axis": {"range": [0, 100], "tickcolor": "#64748B", "tickfont": {"color": "#64748B"}},
+                    "axis": {"range": [0, 100], "tickcolor": "#5B6478", "tickfont": {"color": "#5B6478"}},
                     "bar": {"color": gauge_color},
-                    "bgcolor": "#111827",
+                    "bgcolor": "#10141F",
                     "borderwidth": 0,
                     "steps": [
-                        {"range": [0, 40], "color": "rgba(248,113,113,0.12)"},
-                        {"range": [40, 70], "color": "rgba(251,191,36,0.12)"},
-                        {"range": [70, 100], "color": "rgba(52,211,153,0.12)"},
+                        {"range": [0, 40], "color": "rgba(240,104,92,0.10)"},
+                        {"range": [40, 70], "color": "rgba(245,185,66,0.10)"},
+                        {"range": [70, 100], "color": "rgba(52,211,153,0.10)"},
                     ],
                 },
                 domain={"x": [0, 1], "y": [0, 1]},
             ))
             fig.update_layout(
-                height=240, margin=dict(l=20, r=20, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)", font_color="#F8FAFC",
+                height=230, margin=dict(l=20, r=20, t=20, b=10),
+                paper_bgcolor="rgba(0,0,0,0)", font_color="#F4F6FB",
             )
             st.plotly_chart(fig, use_container_width=True)
         except Exception:
