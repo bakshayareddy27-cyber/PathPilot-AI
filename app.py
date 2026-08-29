@@ -11,6 +11,7 @@ from core.profiler import LearnerProfile
 from core.intelligence_engine import IntelligenceEngine
 from core.adaptive_engine import AdaptiveEngine, AdaptationState
 from core.ai_assistant import AIAssistant
+from ui.roadmap import render_roadmap
 
 from ui.dashboard import render_dashboard
 from ui.roadmap import render_roadmap
