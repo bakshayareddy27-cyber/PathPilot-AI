@@ -1,21 +1,27 @@
 """
 PathPilot AI — Overview Dashboard
-UI rendering only.
-Existing backend output contract is preserved.
+
+Presentation layer only.
+Uses the existing IntelligenceEngine output without changing
+backend contracts or calculations.
 """
 
+import html
 import streamlit as st
 
 try:
     import plotly.graph_objects as go
+
     PLOTLY_AVAILABLE = True
+
 except Exception:
+
     PLOTLY_AVAILABLE = False
 
 
-# ======================================================================
+# ==============================================================
 # MAIN DASHBOARD
-# ======================================================================
+# ==============================================================
 
 def render_dashboard(
     profile,
@@ -27,31 +33,32 @@ def render_dashboard(
     st.markdown(
         """
         <div class="pp-eyebrow">
-            Learning Intelligence
+            YOUR LEARNING INTELLIGENCE
         </div>
 
         <h2 class="pp-section-title">
-            Your learning overview
+            Overview
         </h2>
 
         <p class="pp-section-description">
-            A clear snapshot of your readiness, skill coverage
-            and learning risks.
+            A clear snapshot of your current learning position.
         </p>
         """,
         unsafe_allow_html=True,
     )
 
-    st.write("")
-
-    readiness = engine_output.get("readiness")
+    readiness = engine_output.get(
+        "readiness"
+    )
 
     health = (
         engine_output.get("path_health")
         or {}
     )
 
-    skill_gap = engine_output.get("skill_gap")
+    skill_gap = engine_output.get(
+        "skill_gap"
+    )
 
     risks = (
         engine_output.get("risks")
@@ -72,11 +79,13 @@ def render_dashboard(
         "Unknown",
     )
 
-    missing_skills = _extract_missing_skills(
-        skill_gap
+    missing_skills = (
+        _extract_missing_skills(
+            skill_gap
+        )
     )
 
-    _render_metrics(
+    _render_metric_cards(
         readiness_score,
         health_score,
         health_status,
@@ -85,17 +94,21 @@ def render_dashboard(
     )
 
     st.write("")
-    st.write("")
 
-    left, right = st.columns([1.05, 0.95])
+    left, right = st.columns(2)
+
+    # ==========================================================
+    # SKILLS COVERAGE
+    # ==========================================================
 
     with left:
 
         st.markdown(
             """
             <div class="pp-card">
+
                 <div class="pp-eyebrow">
-                    Skills Coverage
+                    SKILLS COVERAGE
                 </div>
             """,
             unsafe_allow_html=True,
@@ -120,22 +133,18 @@ def render_dashboard(
             unsafe_allow_html=True,
         )
 
+    # ==========================================================
+    # PRIORITIZED SKILL GAPS
+    # ==========================================================
+
     with right:
 
         st.markdown(
             """
             <div class="pp-card">
-                <div class="pp-eyebrow">
-                    Priority Gaps
-                </div>
 
-                <div style="
-                    font-family:var(--font-display);
-                    font-size:1.05rem;
-                    font-weight:700;
-                    margin-bottom:1rem;
-                ">
-                    Skills worth focusing on
+                <div class="pp-eyebrow">
+                    PRIORITIZED SKILL GAPS
                 </div>
             """,
             unsafe_allow_html=True,
@@ -150,17 +159,155 @@ def render_dashboard(
             unsafe_allow_html=True,
         )
 
+    # ==========================================================
+    # QUICK SNAPSHOT
+    # ==========================================================
+
     st.write("")
-    st.write("")
 
-    _render_snapshot(profile)
+    st.markdown(
+        """
+        <div class="pp-card">
+
+            <div class="pp-eyebrow">
+                QUICK SNAPSHOT
+            </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+
+        career_goal = html.escape(
+            str(
+                getattr(
+                    profile,
+                    "career_goal",
+                    "N/A",
+                )
+            )
+        )
+
+        weekly_hours = html.escape(
+            str(
+                getattr(
+                    profile,
+                    "weekly_hours",
+                    "N/A",
+                )
+            )
+        )
+
+        st.markdown(
+            f"""
+            <div class="pp-dashboard-list-item">
+
+                <div>
+                    <div class="pp-metric-label">
+                        Career Goal
+                    </div>
+
+                    <div class="pp-dashboard-skill">
+                        {career_goal}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="pp-dashboard-list-item">
+
+                <div>
+                    <div class="pp-metric-label">
+                        Weekly Learning
+                    </div>
+
+                    <div class="pp-dashboard-skill">
+                        {weekly_hours} hours / week
+                    </div>
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+
+        timeline = html.escape(
+            str(
+                getattr(
+                    profile,
+                    "timeline_weeks",
+                    "N/A",
+                )
+            )
+        )
+
+        skills = getattr(
+            profile,
+            "current_skills",
+            [],
+        ) or []
+
+        skills_text = (
+            ", ".join(
+                str(skill)
+                for skill in skills
+            )
+            if skills
+            else "None yet"
+        )
+
+        skills_text = html.escape(
+            skills_text
+        )
+
+        st.markdown(
+            f"""
+            <div class="pp-dashboard-list-item">
+
+                <div>
+                    <div class="pp-metric-label">
+                        Target Timeline
+                    </div>
+
+                    <div class="pp-dashboard-skill">
+                        {timeline} weeks
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="pp-dashboard-list-item">
+
+                <div>
+                    <div class="pp-metric-label">
+                        Current Skills
+                    </div>
+
+                    <div class="pp-dashboard-skill">
+                        {skills_text}
+                    </div>
+                </div>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 
-# ======================================================================
-# METRICS
-# ======================================================================
+# ==============================================================
+# METRIC CARDS
+# ==============================================================
 
-def _render_metrics(
+def _render_metric_cards(
     readiness_score,
     health_score,
     health_status,
@@ -168,65 +315,69 @@ def _render_metrics(
     risk_count,
 ):
 
-    readiness_display = (
-        f"{readiness_score}%"
-        if readiness_score is not None
-        else "—"
-    )
-
-    readiness_description = (
-        "Strong foundation"
-        if isinstance(readiness_score, (int, float))
-        and readiness_score >= 70
-        else "Still building"
+    readiness_good = (
+        isinstance(
+            readiness_score,
+            (int, float),
+        )
+        and readiness_score >= 60
     )
 
     health_class = {
         "Healthy": "trend-good",
-        "At Risk": "trend-warning",
-        "Critical": "trend-danger",
+        "At Risk": "trend-warn",
+        "Critical": "trend-bad",
     }.get(
         health_status,
-        "",
+        "trend-neutral",
     )
 
     cards = [
 
         (
             "Readiness",
-            readiness_display,
-            readiness_description,
-            "trend-good"
-            if readiness_score
-            and readiness_score >= 70
-            else "",
+            (
+                f"{readiness_score}%"
+                if readiness_score is not None
+                else "—"
+            ),
+            (
+                "Strong foundation"
+                if readiness_good
+                else "Still building"
+            ),
+            (
+                "trend-good"
+                if readiness_good
+                else "trend-neutral"
+            ),
         ),
 
         (
             "Path Health",
-            health_score,
+            str(health_score),
             health_status,
             health_class,
         ),
 
         (
-            "Skill Gaps",
-            missing_count,
+            "Missing Skills",
+            str(missing_count),
             "Skills remaining",
-            "",
+            "trend-neutral",
         ),
 
         (
             "Active Risks",
-            risk_count,
+            str(risk_count),
             (
                 "Needs attention"
-                if risk_count
-                else "No active risks"
+                if risk_count > 0
+                else "All clear"
             ),
             (
-                "trend-danger"
-                if risk_count
+                "trend-bad"
+                if risk_count > 0
                 else "trend-good"
             ),
         ),
@@ -248,18 +399,15 @@ def _render_metrics(
                 <div class="pp-metric-card">
 
                     <div class="pp-metric-label">
-                        {label}
+                        {html.escape(str(label))}
                     </div>
 
                     <div class="pp-metric-value">
-                        {value}
+                        {html.escape(str(value))}
                     </div>
 
-                    <div class="
-                        pp-metric-description
-                        {trend_class}
-                    ">
-                        {description}
+                    <div class="pp-metric-desc {trend_class}">
+                        {html.escape(str(description))}
                     </div>
 
                 </div>
@@ -268,16 +416,19 @@ def _render_metrics(
             )
 
 
-# ======================================================================
-# DATA EXTRACTION
-# ======================================================================
+# ==============================================================
+# READINESS EXTRACTION
+# ==============================================================
 
 def _extract_score(readiness):
 
     if readiness is None:
         return None
 
-    if isinstance(readiness, dict):
+    if isinstance(
+        readiness,
+        dict,
+    ):
 
         return (
             readiness.get("score")
@@ -288,17 +439,25 @@ def _extract_score(readiness):
         readiness,
         (int, float),
     ):
+
         return readiness
 
     return None
 
+
+# ==============================================================
+# SKILL GAP EXTRACTION
+# ==============================================================
 
 def _extract_missing_skills(skill_gap):
 
     if not skill_gap:
         return []
 
-    if isinstance(skill_gap, dict):
+    if isinstance(
+        skill_gap,
+        dict,
+    ):
 
         for key in [
             "missing_skills",
@@ -316,15 +475,21 @@ def _extract_missing_skills(skill_gap):
 
                 return skill_gap[key]
 
-    if isinstance(skill_gap, list):
+        return []
+
+    if isinstance(
+        skill_gap,
+        list,
+    ):
+
         return skill_gap
 
     return []
 
 
-# ======================================================================
+# ==============================================================
 # SKILLS CHART
-# ======================================================================
+# ==============================================================
 
 def _render_skills_chart(
     current_skills,
@@ -346,8 +511,11 @@ def _render_skills_chart(
 
         st.markdown(
             """
-            <p class="pp-section-description">
-                No skill data is available yet.
+            <p style="
+                color:var(--text-faint);
+                font-size:0.85rem;
+            ">
+                No skill data available yet.
             </p>
             """,
             unsafe_allow_html=True,
@@ -357,9 +525,9 @@ def _render_skills_chart(
 
     if PLOTLY_AVAILABLE:
 
-        fig = go.Figure()
+        figure = go.Figure()
 
-        fig.add_trace(
+        figure.add_trace(
             go.Bar(
                 x=[
                     "Current Skills",
@@ -372,18 +540,18 @@ def _render_skills_chart(
                 ],
 
                 marker_color=[
-                    "#7C6CFF",
-                    "#303747",
+                    "#6d72ff",
+                    "#2a3448",
                 ],
 
                 marker_line_width=0,
 
-                width=0.55,
+                width=0.5,
             )
         )
 
-        fig.update_layout(
-            height=280,
+        figure.update_layout(
+            height=260,
 
             margin=dict(
                 l=10,
@@ -398,17 +566,19 @@ def _render_skills_chart(
             plot_bgcolor=
                 "rgba(0,0,0,0)",
 
-            font_color="#7F8898",
+            font_color="#7f8a9e",
 
             font_family="Inter",
 
             showlegend=False,
 
             yaxis=dict(
-                title="",
                 gridcolor=
                     "rgba(255,255,255,0.05)",
+
                 zeroline=False,
+
+                title="Skill Count",
             ),
 
             xaxis=dict(
@@ -417,7 +587,7 @@ def _render_skills_chart(
         )
 
         st.plotly_chart(
-            fig,
+            figure,
             use_container_width=True,
         )
 
@@ -434,12 +604,12 @@ def _render_skills_chart(
         )
 
 
-# ======================================================================
+# ==============================================================
 # SKILL GAP LIST
-# ======================================================================
+# ==============================================================
 
 def _render_skill_gap_list(
-    missing_skills
+    missing_skills,
 ):
 
     if not missing_skills:
@@ -448,10 +618,11 @@ def _render_skill_gap_list(
             """
             <div style="
                 color:var(--success);
-                font-size:0.88rem;
-                padding:0.5rem 0;
+                font-size:0.87rem;
+                padding:0.8rem 0;
             ">
-                ✓ Your current skills are well aligned with your goal.
+                ✓ No missing skills detected.
+                You're well aligned with your goal.
             </div>
             """,
             unsafe_allow_html=True,
@@ -459,12 +630,12 @@ def _render_skill_gap_list(
 
         return
 
-    for index, item in enumerate(
-        missing_skills[:8],
-        start=1,
-    ):
+    for item in missing_skills[:8]:
 
-        if isinstance(item, dict):
+        if isinstance(
+            item,
+            dict,
+        ):
 
             name = (
                 item.get("skill")
@@ -480,43 +651,28 @@ def _render_skill_gap_list(
         else:
 
             name = str(item)
+
             priority = ""
 
-        priority_text = (
-            f"Priority {priority}"
-            if priority != ""
-            else "Recommended"
-        )
+        priority_html = ""
+
+        if priority != "":
+
+            priority_html = f"""
+            <span class="pp-dashboard-priority">
+                Priority {html.escape(str(priority))}
+            </span>
+            """
 
         st.markdown(
             f"""
-            <div class="pp-reason">
+            <div class="pp-dashboard-list-item">
 
-                <span style="
-                    min-width:22px;
-                    color:var(--primary);
-                    font-family:var(--font-mono);
-                    font-size:0.72rem;
-                ">
-                    {index:02d}
-                </span>
+                <div class="pp-dashboard-skill">
+                    {html.escape(str(name))}
+                </div>
 
-                <span>
-
-                    <b style="
-                        color:var(--text-primary);
-                    ">
-                        {name}
-                    </b>
-
-                    <span style="
-                        color:var(--text-faint);
-                        font-size:0.75rem;
-                    ">
-                        · {priority_text}
-                    </span>
-
-                </span>
+                {priority_html}
 
             </div>
             """,
@@ -525,6 +681,10 @@ def _render_skill_gap_list(
 
     if len(missing_skills) > 8:
 
+        remaining = (
+            len(missing_skills) - 8
+        )
+
         st.markdown(
             f"""
             <p style="
@@ -532,137 +692,8 @@ def _render_skill_gap_list(
                 font-size:0.78rem;
                 margin-top:0.8rem;
             ">
-                + {len(missing_skills) - 8}
-                additional skills identified
+                + {remaining} more skill gaps
             </p>
             """,
             unsafe_allow_html=True,
         )
-
-
-# ======================================================================
-# SNAPSHOT
-# ======================================================================
-
-def _render_snapshot(profile):
-
-    st.markdown(
-        """
-        <div class="pp-card">
-
-            <div class="pp-eyebrow">
-                Learning Profile
-            </div>
-
-            <div style="
-                font-family:var(--font-display);
-                font-size:1.1rem;
-                font-weight:700;
-                margin-bottom:1rem;
-            ">
-                Your current setup
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col1, col2, col3 = st.columns(3)
-
-    current_skills = (
-        ", ".join(
-            getattr(
-                profile,
-                "current_skills",
-                [],
-            )
-            or []
-        )
-        or "None yet"
-    )
-
-    with col1:
-
-        st.markdown(
-            f"""
-            <div class="pp-metric-label">
-                Career Goal
-            </div>
-
-            <div style="
-                margin-top:0.45rem;
-                color:var(--text-secondary);
-                font-size:0.88rem;
-            ">
-                {getattr(profile, "career_goal", "N/A")}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col2:
-
-        st.markdown(
-            f"""
-            <div class="pp-metric-label">
-                Weekly Commitment
-            </div>
-
-            <div style="
-                margin-top:0.45rem;
-                color:var(--text-secondary);
-                font-size:0.88rem;
-            ">
-                {getattr(profile, "weekly_hours", "N/A")}
-                hours / week
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col3:
-
-        st.markdown(
-            f"""
-            <div class="pp-metric-label">
-                Timeline
-            </div>
-
-            <div style="
-                margin-top:0.45rem;
-                color:var(--text-secondary);
-                font-size:0.88rem;
-            ">
-                {getattr(profile, "timeline_weeks", "N/A")}
-                weeks
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    st.markdown(
-        f"""
-        <div style="
-            margin-top:1.5rem;
-            padding-top:1rem;
-            border-top:1px solid var(--border);
-        ">
-
-            <div class="pp-metric-label">
-                Current Skills
-            </div>
-
-            <div style="
-                margin-top:0.5rem;
-                color:var(--text-muted);
-                font-size:0.84rem;
-                line-height:1.7;
-            ">
-                {current_skills}
-            </div>
-
-        </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
