@@ -1,233 +1,146 @@
-"""
-PathPilot AI — Overview Dashboard
-
-Presentation layer only.
-Uses the existing IntelligenceEngine output without changing
-backend contracts or calculations.
-"""
-
 import html
 import streamlit as st
 
-try:
-    import plotly.graph_objects as go
 
-    PLOTLY_AVAILABLE = True
+# ==========================================================
+# HELPERS
+# ==========================================================
 
-except Exception:
+def safe_text(value, fallback="—"):
+    if value is None:
+        return fallback
 
-    PLOTLY_AVAILABLE = False
+    text = str(value).strip()
+
+    if not text:
+        return fallback
+
+    return html.escape(text)
 
 
-# ==============================================================
-# MAIN DASHBOARD
-# ==============================================================
+def get_risk_text(risk):
+
+    if isinstance(risk, dict):
+
+        return (
+            risk.get("description")
+            or risk.get("message")
+            or risk.get("risk")
+            or risk.get("type")
+            or "Potential path risk"
+        )
+
+    return str(risk)
+
+
+def get_risk_priority(risk):
+
+    if isinstance(risk, dict):
+
+        value = (
+            risk.get("priority")
+            or risk.get("severity")
+            or risk.get("level")
+            or ""
+        )
+
+        return str(value).lower()
+
+    return ""
+
+
+def risk_class(priority):
+
+    if any(word in priority for word in ["critical", "high"]):
+        return "high"
+
+    if any(word in priority for word in ["medium", "moderate"]):
+        return "medium"
+
+    return "low"
+
+
+# ==========================================================
+# DASHBOARD
+# ==========================================================
 
 def render_dashboard(
     profile,
     engine_output,
-    safe_call,
-    engine,
+    ai_assistant,
+    adaptive_engine,
+    adaptation_state,
 ):
 
+    engine_output = engine_output or {}
+
+    nba = engine_output.get("next_best_action") or {}
+    health = engine_output.get("path_health") or {}
+    risks = engine_output.get("risks") or []
+
+    # ======================================================
+    # HEADER
+    # ======================================================
+
     st.markdown(
-        """
-        <div class="pp-eyebrow">
-            YOUR LEARNING INTELLIGENCE
+        f"""
+        <div class="pp-dashboard-hero">
+
+            <div class="pp-eyebrow">
+                YOUR PERSONAL LEARNING INTELLIGENCE
+            </div>
+
+            <div class="pp-section-title">
+                Welcome back, {safe_text(profile.name)}
+            </div>
+
+            <div class="pp-section-subtitle">
+                Here's what deserves your attention right now.
+            </div>
+
         </div>
-
-        <h2 class="pp-section-title">
-            Overview
-        </h2>
-
-        <p class="pp-section-description">
-            A clear snapshot of your current learning position.
-        </p>
         """,
         unsafe_allow_html=True,
     )
 
-    readiness = engine_output.get(
-        "readiness"
-    )
 
-    health = (
-        engine_output.get("path_health")
-        or {}
-    )
+    # ======================================================
+    # KPI CARDS
+    # ======================================================
 
-    skill_gap = engine_output.get(
-        "skill_gap"
-    )
+    health_score = health.get("health_score", "—")
+    health_status = health.get("status", "Unknown")
 
-    risks = (
-        engine_output.get("risks")
-        or []
-    )
-
-    readiness_score = _extract_score(
-        readiness
-    )
-
-    health_score = health.get(
-        "health_score",
+    weekly_hours = getattr(
+        profile,
+        "weekly_hours",
         "—",
     )
 
-    health_status = health.get(
-        "status",
-        "Unknown",
+    current_skills = getattr(
+        profile,
+        "current_skills",
+        [],
     )
 
-    missing_skills = (
-        _extract_missing_skills(
-            skill_gap
-        )
-    )
-
-    _render_metric_cards(
-        readiness_score,
-        health_score,
-        health_status,
-        len(missing_skills),
-        len(risks),
-    )
-
-    st.write("")
-
-    left, right = st.columns(2)
-
-    # ==========================================================
-    # SKILLS COVERAGE
-    # ==========================================================
-
-    with left:
-
-        st.markdown(
-            """
-            <div class="pp-card">
-
-                <div class="pp-eyebrow">
-                    SKILLS COVERAGE
-                </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        current_skills = list(
-            getattr(
-                profile,
-                "current_skills",
-                [],
-            )
-            or []
-        )
-
-        _render_skills_chart(
-            current_skills,
-            missing_skills,
-        )
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ==========================================================
-    # PRIORITIZED SKILL GAPS
-    # ==========================================================
-
-    with right:
-
-        st.markdown(
-            """
-            <div class="pp-card">
-
-                <div class="pp-eyebrow">
-                    PRIORITIZED SKILL GAPS
-                </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        _render_skill_gap_list(
-            missing_skills
-        )
-
-        st.markdown(
-            "</div>",
-            unsafe_allow_html=True,
-        )
-
-    # ==========================================================
-    # QUICK SNAPSHOT
-    # ==========================================================
-
-    st.write("")
-
-    st.markdown(
-        """
-        <div class="pp-card">
-
-            <div class="pp-eyebrow">
-                QUICK SNAPSHOT
-            </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    col1, col2 = st.columns(2)
+    col1, col2, col3, col4 = st.columns(4)
 
     with col1:
 
-        career_goal = html.escape(
-            str(
-                getattr(
-                    profile,
-                    "career_goal",
-                    "N/A",
-                )
-            )
-        )
-
-        weekly_hours = html.escape(
-            str(
-                getattr(
-                    profile,
-                    "weekly_hours",
-                    "N/A",
-                )
-            )
-        )
-
         st.markdown(
             f"""
-            <div class="pp-dashboard-list-item">
-
-                <div>
-                    <div class="pp-metric-label">
-                        Career Goal
-                    </div>
-
-                    <div class="pp-dashboard-skill">
-                        {career_goal}
-                    </div>
+            <div class="pp-card">
+                <div class="pp-card-label">
+                    Path Health
                 </div>
 
-            </div>
-
-            <div class="pp-dashboard-list-item">
-
-                <div>
-                    <div class="pp-metric-label">
-                        Weekly Learning
-                    </div>
-
-                    <div class="pp-dashboard-skill">
-                        {weekly_hours} hours / week
-                    </div>
+                <div class="pp-card-value">
+                    {safe_text(health_score)}
                 </div>
 
+                <div style="color:#a1a1aa;font-size:0.85rem;">
+                    {safe_text(health_status)}
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -235,465 +148,576 @@ def render_dashboard(
 
     with col2:
 
-        timeline = html.escape(
-            str(
-                getattr(
-                    profile,
-                    "timeline_weeks",
-                    "N/A",
-                )
-            )
+        st.markdown(
+            f"""
+            <div class="pp-card">
+                <div class="pp-card-label">
+                    Current Skills
+                </div>
+
+                <div class="pp-card-value">
+                    {len(current_skills)}
+                </div>
+
+                <div style="color:#a1a1aa;font-size:0.85rem;">
+                    Skills recognized
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
         )
 
-        skills = getattr(
-            profile,
-            "current_skills",
-            [],
-        ) or []
-
-        skills_text = (
-            ", ".join(
-                str(skill)
-                for skill in skills
-            )
-            if skills
-            else "None yet"
-        )
-
-        skills_text = html.escape(
-            skills_text
-        )
+    with col3:
 
         st.markdown(
             f"""
-            <div class="pp-dashboard-list-item">
-
-                <div>
-                    <div class="pp-metric-label">
-                        Target Timeline
-                    </div>
-
-                    <div class="pp-dashboard-skill">
-                        {timeline} weeks
-                    </div>
+            <div class="pp-card">
+                <div class="pp-card-label">
+                    Weekly Capacity
                 </div>
 
+                <div class="pp-card-value">
+                    {safe_text(weekly_hours)}h
+                </div>
+
+                <div style="color:#a1a1aa;font-size:0.85rem;">
+                    Available learning time
+                </div>
             </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-            <div class="pp-dashboard-list-item">
+    with col4:
 
-                <div>
-                    <div class="pp-metric-label">
-                        Current Skills
-                    </div>
-
-                    <div class="pp-dashboard-skill">
-                        {skills_text}
-                    </div>
+        st.markdown(
+            f"""
+            <div class="pp-card">
+                <div class="pp-card-label">
+                    Active Risks
                 </div>
+
+                <div class="pp-card-value">
+                    {len(risks)}
+                </div>
+
+                <div style="color:#a1a1aa;font-size:0.85rem;">
+                    Things to monitor
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
+    # ======================================================
+    # NEXT BEST ACTION
+    # ======================================================
+
+    if nba:
+
+        skill = nba.get("skill", "Your next learning step")
+        reasons = nba.get("reasons") or []
+        est_hours = nba.get("est_hours")
+        difficulty = nba.get("difficulty")
+
+        reason_html = ""
+
+        if reasons:
+
+            items = []
+
+            for reason in reasons[:3]:
+
+                items.append(
+                    f"""
+                    <li style="margin-bottom:0.45rem;">
+                        {safe_text(reason)}
+                    </li>
+                    """
+                )
+
+            reason_html = (
+                "<ul style='color:#a1a1aa;"
+                "padding-left:1.2rem;"
+                "margin-top:0.8rem;'>"
+                + "".join(items)
+                + "</ul>"
+            )
+
+        st.markdown(
+            f"""
+            <div class="pp-nba">
+
+                <div class="pp-nba-label">
+                    NEXT BEST ACTION
+                </div>
+
+                <div class="pp-nba-title">
+                    {safe_text(skill)}
+                </div>
+
+                <div style="
+                    color:#a1a1aa;
+                    line-height:1.7;
+                    max-width:850px;
+                ">
+                    This is the highest-value next step based on
+                    your current skills, career direction, and
+                    learning readiness.
+                </div>
+
+                <div style="
+                    display:flex;
+                    gap:0.7rem;
+                    flex-wrap:wrap;
+                    margin-top:1rem;
+                ">
+                    <span style="
+                        padding:0.4rem 0.75rem;
+                        border-radius:999px;
+                        background:rgba(139,92,246,0.15);
+                        color:#c4b5fd;
+                        font-size:0.8rem;
+                    ">
+                        {safe_text(difficulty, "Personalized difficulty")}
+                    </span>
+
+                    <span style="
+                        padding:0.4rem 0.75rem;
+                        border-radius:999px;
+                        background:rgba(255,255,255,0.06);
+                        color:#d4d4d8;
+                        font-size:0.8rem;
+                    ">
+                        {safe_text(est_hours, "Flexible")} hours
+                    </span>
+                </div>
+
+                {reason_html}
 
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True,
-    )
+    else:
 
-
-# ==============================================================
-# METRIC CARDS
-# ==============================================================
-
-def _render_metric_cards(
-    readiness_score,
-    health_score,
-    health_status,
-    missing_count,
-    risk_count,
-):
-
-    readiness_good = (
-        isinstance(
-            readiness_score,
-            (int, float),
+        st.info(
+            "No immediate recommendation is available yet."
         )
-        and readiness_score >= 60
-    )
 
-    health_class = {
-        "Healthy": "trend-good",
-        "At Risk": "trend-warn",
-        "Critical": "trend-bad",
-    }.get(
-        health_status,
-        "trend-neutral",
-    )
 
-    cards = [
+    # ======================================================
+    # FEEDBACK
+    # ======================================================
 
-        (
-            "Readiness",
+    if nba and adaptive_engine:
+
+        st.markdown(
+            """
+            <div class="pp-section-title">
+                How does this step feel?
+            </div>
+
+            <div class="pp-section-subtitle">
+                Your feedback helps PathPilot adapt your learning path.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        skill_name = nba.get("skill")
+
+        feedback_col1, feedback_col2, feedback_col3 = st.columns(3)
+
+        feedback_map = [
             (
-                f"{readiness_score}%"
-                if readiness_score is not None
-                else "—"
+                feedback_col1,
+                "Too easy",
+                "too_easy",
+                "Move me forward faster",
             ),
             (
-                "Strong foundation"
-                if readiness_good
-                else "Still building"
+                feedback_col2,
+                "Feels right",
+                "appropriate",
+                "Keep this in progress",
             ),
             (
-                "trend-good"
-                if readiness_good
-                else "trend-neutral"
+                feedback_col3,
+                "Too difficult",
+                "too_difficult",
+                "Find the foundation first",
             ),
-        ),
+        ]
 
-        (
-            "Path Health",
-            str(health_score),
-            health_status,
-            health_class,
-        ),
+        for column, label, feedback_value, caption in feedback_map:
 
-        (
-            "Missing Skills",
-            str(missing_count),
-            "Skills remaining",
-            "trend-neutral",
-        ),
+            with column:
 
-        (
-            "Active Risks",
-            str(risk_count),
-            (
-                "Needs attention"
-                if risk_count > 0
-                else "All clear"
-            ),
-            (
-                "trend-bad"
-                if risk_count > 0
-                else "trend-good"
-            ),
-        ),
-    ]
+                if st.button(
+                    f"{label}",
+                    key=f"feedback_{feedback_value}",
+                    use_container_width=True,
+                ):
 
-    columns = st.columns(4)
+                    try:
 
-    for column, card in zip(
-        columns,
-        cards,
-    ):
+                        result = adaptive_engine.apply_feedback(
+                            profile,
+                            skill_name,
+                            feedback_value,
+                            adaptation_state,
+                        )
 
-        label, value, description, trend_class = card
+                        st.session_state.engine_output = {
+                            "next_best_action": (
+                                result.get(
+                                    "updated_recommendation"
+                                )
+                            ),
+                            "path_health": (
+                                result.get(
+                                    "updated_path_health"
+                                )
+                            ),
+                            "risks": (
+                                result.get(
+                                    "updated_risks"
+                                )
+                                or []
+                            ),
+                        }
 
-        with column:
+                        st.success(
+                            result.get(
+                                "adaptation_message",
+                                "Your path has been updated.",
+                            )
+                        )
+
+                        st.rerun()
+
+                    except Exception as error:
+
+                        st.error(
+                            f"Couldn't adapt the path: {error}"
+                        )
+
+                st.caption(caption)
+
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+
+    # ======================================================
+    # PATH HEALTH + RISKS
+    # ======================================================
+
+    left, right = st.columns([1, 1.35])
+
+    with left:
+
+        factors = (
+            health.get(
+                "contributing_factors",
+                [],
+            )
+            or []
+        )
+
+        factors_html = ""
+
+        if factors:
+
+            factor_items = "".join(
+                f"""
+                <div style="
+                    padding:0.65rem 0;
+                    border-bottom:1px solid #2a2a31;
+                    color:#a1a1aa;
+                ">
+                    {safe_text(factor)}
+                </div>
+                """
+                for factor in factors[:5]
+            )
+
+            factors_html = factor_items
+
+        else:
+
+            factors_html = """
+            <div style="color:#71717a;">
+                No major contributing factors available.
+            </div>
+            """
+
+        st.markdown(
+            f"""
+            <div class="pp-health">
+
+                <div class="pp-card-label">
+                    PATH HEALTH
+                </div>
+
+                <div class="pp-health-score">
+                    {safe_text(health_score)}
+                </div>
+
+                <div style="
+                    color:#c4b5fd;
+                    font-weight:650;
+                    margin-bottom:1rem;
+                ">
+                    {safe_text(health_status)}
+                </div>
+
+                {factors_html}
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+
+    with right:
+
+        st.markdown(
+            """
+            <div class="pp-section-title">
+                Risks to watch
+            </div>
+
+            <div class="pp-section-subtitle">
+                Structured signals that may affect your progress.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        if risks:
+
+            for index, risk in enumerate(risks):
+
+                risk_text = get_risk_text(risk)
+                priority = get_risk_priority(risk)
+                category = risk_class(priority)
+
+                if category == "high":
+
+                    badge_style = """
+                    background:rgba(251,113,133,0.12);
+                    color:#fda4af;
+                    border:1px solid rgba(251,113,133,0.22);
+                    """
+
+                    label = "HIGH PRIORITY"
+
+                elif category == "medium":
+
+                    badge_style = """
+                    background:rgba(251,191,36,0.10);
+                    color:#fcd34d;
+                    border:1px solid rgba(251,191,36,0.2);
+                    """
+
+                    label = "WATCH"
+
+                else:
+
+                    badge_style = """
+                    background:rgba(255,255,255,0.05);
+                    color:#a1a1aa;
+                    border:1px solid #2a2a31;
+                    """
+
+                    label = "MONITOR"
+
+                st.markdown(
+                    f"""
+                    <div class="pp-card"
+                        style="margin-bottom:0.8rem;">
+
+                        <div style="
+                            display:flex;
+                            justify-content:space-between;
+                            align-items:center;
+                            gap:1rem;
+                        ">
+
+                            <div style="
+                                color:#f4f4f5;
+                                font-weight:600;
+                            ">
+                                {safe_text(risk_text)}
+                            </div>
+
+                            <span style="
+                                {badge_style}
+                                padding:0.28rem 0.55rem;
+                                border-radius:999px;
+                                font-size:0.68rem;
+                                font-weight:800;
+                                white-space:nowrap;
+                            ">
+                                {label}
+                            </span>
+
+                        </div>
+
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+        else:
 
             st.markdown(
-                f"""
-                <div class="pp-metric-card">
-
-                    <div class="pp-metric-label">
-                        {html.escape(str(label))}
+                """
+                <div class="pp-card">
+                    <div style="
+                        color:#34d399;
+                        font-weight:700;
+                    ">
+                        ✓ No major risks detected
                     </div>
 
-                    <div class="pp-metric-value">
-                        {html.escape(str(value))}
+                    <div style="
+                        color:#a1a1aa;
+                        margin-top:0.5rem;
+                    ">
+                        Your current path does not have any
+                        significant warning signals.
                     </div>
-
-                    <div class="pp-metric-desc {trend_class}">
-                        {html.escape(str(description))}
-                    </div>
-
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
 
-# ==============================================================
-# READINESS EXTRACTION
-# ==============================================================
+    st.markdown("<br><br>", unsafe_allow_html=True)
 
-def _extract_score(readiness):
 
-    if readiness is None:
-        return None
+    # ======================================================
+    # AI ASSISTANT
+    # ======================================================
 
-    if isinstance(
-        readiness,
-        dict,
-    ):
+    st.markdown(
+        """
+        <div class="pp-ai">
 
-        return (
-            readiness.get("score")
-            or readiness.get("readiness_score")
-        )
+            <div class="pp-ai-header">
 
-    if isinstance(
-        readiness,
-        (int, float),
-    ):
-
-        return readiness
-
-    return None
-
-
-# ==============================================================
-# SKILL GAP EXTRACTION
-# ==============================================================
-
-def _extract_missing_skills(skill_gap):
-
-    if not skill_gap:
-        return []
-
-    if isinstance(
-        skill_gap,
-        dict,
-    ):
-
-        for key in [
-            "missing_skills",
-            "missing",
-            "gaps",
-        ]:
-
-            if (
-                key in skill_gap
-                and isinstance(
-                    skill_gap[key],
-                    list,
-                )
-            ):
-
-                return skill_gap[key]
-
-        return []
-
-    if isinstance(
-        skill_gap,
-        list,
-    ):
-
-        return skill_gap
-
-    return []
-
-
-# ==============================================================
-# SKILLS CHART
-# ==============================================================
-
-def _render_skills_chart(
-    current_skills,
-    missing_skills,
-):
-
-    possessed_count = len(
-        current_skills
-    )
-
-    missing_count = len(
-        missing_skills
-    )
-
-    if (
-        possessed_count == 0
-        and missing_count == 0
-    ):
-
-        st.markdown(
-            """
-            <p style="
-                color:var(--text-faint);
-                font-size:0.85rem;
-            ">
-                No skill data available yet.
-            </p>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        return
-
-    if PLOTLY_AVAILABLE:
-
-        figure = go.Figure()
-
-        figure.add_trace(
-            go.Bar(
-                x=[
-                    "Current Skills",
-                    "Skills to Build",
-                ],
-
-                y=[
-                    possessed_count,
-                    missing_count,
-                ],
-
-                marker_color=[
-                    "#6d72ff",
-                    "#2a3448",
-                ],
-
-                marker_line_width=0,
-
-                width=0.5,
-            )
-        )
-
-        figure.update_layout(
-            height=260,
-
-            margin=dict(
-                l=10,
-                r=10,
-                t=15,
-                b=10,
-            ),
-
-            paper_bgcolor=
-                "rgba(0,0,0,0)",
-
-            plot_bgcolor=
-                "rgba(0,0,0,0)",
-
-            font_color="#7f8a9e",
-
-            font_family="Inter",
-
-            showlegend=False,
-
-            yaxis=dict(
-                gridcolor=
-                    "rgba(255,255,255,0.05)",
-
-                zeroline=False,
-
-                title="Skill Count",
-            ),
-
-            xaxis=dict(
-                showgrid=False,
-            ),
-        )
-
-        st.plotly_chart(
-            figure,
-            use_container_width=True,
-        )
-
-    else:
-
-        st.bar_chart(
-            {
-                "Current Skills":
-                    possessed_count,
-
-                "Skills to Build":
-                    missing_count,
-            }
-        )
-
-
-# ==============================================================
-# SKILL GAP LIST
-# ==============================================================
-
-def _render_skill_gap_list(
-    missing_skills,
-):
-
-    if not missing_skills:
-
-        st.markdown(
-            """
-            <div style="
-                color:var(--success);
-                font-size:0.87rem;
-                padding:0.8rem 0;
-            ">
-                ✓ No missing skills detected.
-                You're well aligned with your goal.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        return
-
-    for item in missing_skills[:8]:
-
-        if isinstance(
-            item,
-            dict,
-        ):
-
-            name = (
-                item.get("skill")
-                or item.get("name")
-                or "Unknown Skill"
-            )
-
-            priority = item.get(
-                "priority",
-                "",
-            )
-
-        else:
-
-            name = str(item)
-
-            priority = ""
-
-        priority_html = ""
-
-        if priority != "":
-
-            priority_html = f"""
-            <span class="pp-dashboard-priority">
-                Priority {html.escape(str(priority))}
-            </span>
-            """
-
-        st.markdown(
-            f"""
-            <div class="pp-dashboard-list-item">
-
-                <div class="pp-dashboard-skill">
-                    {html.escape(str(name))}
+                <div class="pp-ai-icon">
+                    ✦
                 </div>
 
-                {priority_html}
+                <div>
+                    <div style="
+                        font-weight:750;
+                        font-size:1.05rem;
+                    ">
+                        PathPilot Intelligence
+                    </div>
+
+                    <div style="
+                        color:#a1a1aa;
+                        font-size:0.82rem;
+                    ">
+                        Ask about your learning path
+                    </div>
+                </div>
 
             </div>
-            """,
-            unsafe_allow_html=True,
-        )
 
-    if len(missing_skills) > 8:
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
-        remaining = (
-            len(missing_skills) - 8
-        )
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    question = st.text_input(
+        "Ask PathPilot",
+        placeholder=(
+            "Why is this my next best action?"
+        ),
+        label_visibility="collapsed",
+        key="ai_question",
+    )
+
+    chip_col1, chip_col2, chip_col3 = st.columns(3)
+
+    suggestions = [
+        (
+            chip_col1,
+            "Why this skill?",
+            "Why is this my next best skill?",
+        ),
+        (
+            chip_col2,
+            "Check my path health",
+            "What does my path health mean?",
+        ),
+        (
+            chip_col3,
+            "What is blocking me?",
+            "Are there any prerequisites or blockers?",
+        ),
+    ]
+
+    selected_question = question
+
+    for column, label, prompt in suggestions:
+
+        with column:
+
+            if st.button(
+                label,
+                key=f"chip_{label}",
+                use_container_width=True,
+            ):
+                selected_question = prompt
+
+    if selected_question:
+
+        if st.button(
+            "Ask PathPilot →",
+            type="primary",
+        ):
+
+            try:
+
+                answer = ai_assistant.answer_path_question(
+                    profile,
+                    engine_output,
+                    selected_question,
+                )
+
+                st.session_state.ai_answer = answer
+
+            except Exception as error:
+
+                st.error(
+                    f"Assistant unavailable: {error}"
+                )
+
+    if st.session_state.get("ai_answer"):
+
+        answer = safe_text(
+            st.session_state.ai_answer
+        ).replace("\n", "<br>")
 
         st.markdown(
             f"""
-            <p style="
-                color:var(--text-faint);
-                font-size:0.78rem;
-                margin-top:0.8rem;
-            ">
-                + {remaining} more skill gaps
-            </p>
+            <div class="pp-answer">
+                {answer}
+            </div>
             """,
             unsafe_allow_html=True,
         )
