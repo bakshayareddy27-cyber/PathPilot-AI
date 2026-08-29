@@ -1,25 +1,26 @@
 """
-PathPilot AI — Streamlit application entrypoint.
-UI-focused production redesign.
-Backend logic and existing engine contracts are preserved.
+PathPilot AI — Streamlit Application
+
+Frontend/UI layer only.
+Core backend logic and data flow are preserved.
 """
 
 import json
+import html
 import streamlit as st
 
 from core.profiler import LearnerProfile
 from core.intelligence_engine import IntelligenceEngine
 from core.adaptive_engine import AdaptiveEngine, AdaptationState
 from core.ai_assistant import AIAssistant
-from ui.roadmap import render_roadmap
 
 from ui.dashboard import render_dashboard
 from ui.roadmap import render_roadmap
 
 
-# ======================================================================
+# ==============================================================
 # PAGE CONFIG
-# ======================================================================
+# ==============================================================
 
 st.set_page_config(
     page_title="PathPilot AI",
@@ -29,73 +30,74 @@ st.set_page_config(
 )
 
 
-# ======================================================================
+# ==============================================================
 # DESIGN SYSTEM
-# ======================================================================
+# ==============================================================
 
 st.markdown(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 
-    <link href="https://fonts.googleapis.com/css2?
-    family=DM+Mono:wght@400;500&
-    family=Manrope:wght@400;500;600;700;800&
-    family=Inter:wght@400;500;600&
-    display=swap"
-    rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
 
     <style>
 
-    /* ================================================================
+    /* =========================================================
        1. DESIGN TOKENS
-    ================================================================= */
+    ========================================================= */
 
     :root {
-        --bg: #090B10;
-        --bg-secondary: #0D1017;
+        --bg: #090d17;
+        --bg-deep: #070a12;
 
-        --surface: #11141C;
-        --surface-raised: #151923;
-        --surface-hover: #1A1F2B;
+        --surface: #101622;
+        --surface-raised: #151c2b;
+        --surface-hover: #192235;
+        --surface-soft: #111827;
 
-        --border: rgba(255,255,255,0.07);
-        --border-strong: rgba(255,255,255,0.12);
+        --border: rgba(255, 255, 255, 0.07);
+        --border-strong: rgba(255, 255, 255, 0.13);
 
-        --primary: #7C6CFF;
-        --primary-soft: rgba(124,108,255,0.12);
+        --primary: #6d72ff;
+        --primary-soft: rgba(109, 114, 255, 0.12);
 
-        --violet: #9B8CFF;
-        --cyan: #5EEAD4;
+        --violet: #9b6dff;
+        --cyan: #42d9f5;
 
-        --success: #4ADE80;
-        --warning: #FBBF24;
-        --danger: #FB7185;
+        --success: #39d98a;
+        --success-soft: rgba(57, 217, 138, 0.10);
 
-        --text-primary: #F5F7FA;
-        --text-secondary: #B6BDCA;
-        --text-muted: #7F8898;
-        --text-faint: #555E6E;
+        --warning: #f6bd45;
+        --warning-soft: rgba(246, 189, 69, 0.10);
 
-        --font-display: 'Manrope', sans-serif;
-        --font-body: 'Inter', sans-serif;
-        --font-mono: 'DM Mono', monospace;
+        --danger: #f07178;
+        --danger-soft: rgba(240, 113, 120, 0.10);
 
-        --radius-sm: 10px;
-        --radius-md: 16px;
-        --radius-lg: 22px;
-        --radius-xl: 28px;
+        --text-primary: #f5f7fb;
+        --text-secondary: #b7c0d0;
+        --text-muted: #7f8a9e;
+        --text-faint: #596378;
 
-        --shadow-soft:
-            0 10px 40px rgba(0,0,0,0.22);
+        --font-display: "Plus Jakarta Sans", sans-serif;
+        --font-body: "Inter", sans-serif;
+        --font-mono: "DM Mono", monospace;
 
-        --shadow-card:
-            0 12px 35px rgba(0,0,0,0.18);
+        --radius-sm: 8px;
+        --radius-md: 14px;
+        --radius-lg: 20px;
+        --radius-xl: 26px;
+
+        --shadow-card: 0 10px 40px rgba(0, 0, 0, 0.18);
     }
 
 
-    /* ================================================================
+    /* =========================================================
        2. GLOBAL STYLES
-    ================================================================= */
+    ========================================================= */
 
     html,
     body,
@@ -107,16 +109,17 @@ st.markdown(
     .stApp {
         background:
             radial-gradient(
-                circle at 15% -10%,
-                rgba(124,108,255,0.13),
-                transparent 35%
+                circle at 12% 0%,
+                rgba(109, 114, 255, 0.11),
+                transparent 32%
             ),
             radial-gradient(
-                circle at 95% 5%,
-                rgba(94,234,212,0.05),
+                circle at 88% 10%,
+                rgba(66, 217, 245, 0.05),
                 transparent 28%
             ),
             var(--bg);
+        background-attachment: fixed;
     }
 
     h1,
@@ -124,6 +127,7 @@ st.markdown(
     h3,
     h4 {
         font-family: var(--font-display) !important;
+        letter-spacing: -0.025em;
     }
 
     #MainMenu,
@@ -132,129 +136,114 @@ st.markdown(
         visibility: hidden;
     }
 
+    hr {
+        border-color: var(--border);
+    }
+
+    ::selection {
+        background: rgba(109, 114, 255, 0.35);
+    }
+
+
+    /* =========================================================
+       3. APP SHELL
+    ========================================================= */
+
     .block-container {
-        max-width: 1220px;
+        max-width: 1180px;
         padding-top: 2.2rem;
         padding-bottom: 4rem;
     }
 
-    p {
-        line-height: 1.65;
-    }
-
-
-    /* ================================================================
-       3. APP SHELL
-    ================================================================= */
-
     .pp-page-header {
         display: flex;
-        align-items: flex-start;
         justify-content: space-between;
-        gap: 2rem;
+        align-items: center;
 
-        padding-bottom: 2rem;
+        padding-bottom: 1.8rem;
         margin-bottom: 2rem;
 
         border-bottom: 1px solid var(--border);
+
+        gap: 1.5rem;
+        flex-wrap: wrap;
     }
 
-    .pp-page-header h1 {
-        margin: 0 0 0.45rem 0;
-
-        font-size: 1.8rem;
-        font-weight: 800;
-        letter-spacing: -0.04em;
-    }
-
-    .pp-page-header p {
+    .pp-page-title {
         margin: 0;
+        font-size: 1.75rem;
+        font-weight: 700;
+    }
 
-        max-width: 620px;
-
+    .pp-page-subtitle {
+        margin-top: 0.45rem;
         color: var(--text-muted);
         font-size: 0.92rem;
+        max-width: 620px;
+        line-height: 1.6;
     }
 
-    .pp-status-card {
-        min-width: 180px;
+    .pp-status-chip {
+        min-width: 170px;
 
-        padding: 1rem 1.1rem;
-
-        background: rgba(21,25,35,0.75);
-
+        background: rgba(21, 28, 43, 0.8);
         border: 1px solid var(--border);
+
         border-radius: var(--radius-md);
 
-        box-shadow: var(--shadow-card);
+        padding: 1rem 1.2rem;
     }
 
     .pp-status-label {
-        display: flex;
-        align-items: center;
-        gap: 7px;
+        color: var(--text-faint);
 
-        font-size: 0.66rem;
-        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 600;
 
         letter-spacing: 0.1em;
         text-transform: uppercase;
-
-        color: var(--text-faint);
-    }
-
-    .pp-status-dot {
-        width: 7px;
-        height: 7px;
-
-        border-radius: 50%;
-
-        background: var(--success);
     }
 
     .pp-status-value {
-        margin-top: 0.55rem;
+        margin-top: 0.3rem;
 
         font-family: var(--font-display);
-        font-size: 1.05rem;
+        font-size: 1.15rem;
         font-weight: 700;
     }
 
     .pp-status-score {
-        margin-top: 0.15rem;
+        margin-top: 0.25rem;
 
         font-family: var(--font-mono);
-        font-size: 0.76rem;
-
         color: var(--text-muted);
+
+        font-size: 0.76rem;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        4. SIDEBAR
-    ================================================================= */
+    ========================================================= */
 
     section[data-testid="stSidebar"] {
-        background: #0C0F15;
-
+        background: #0c111c;
         border-right: 1px solid var(--border);
     }
 
     section[data-testid="stSidebar"] .block-container {
-        padding-top: 1.8rem;
+        padding-top: 1.6rem;
     }
 
     .pp-brand {
         display: flex;
         align-items: center;
-        gap: 11px;
-
-        margin-bottom: 0.2rem;
+        gap: 0.75rem;
     }
 
     .pp-brand-mark {
-        width: 34px;
-        height: 34px;
+        width: 36px;
+        height: 36px;
 
         display: flex;
         align-items: center;
@@ -271,72 +260,71 @@ st.markdown(
 
         color: white;
 
-        font-size: 16px;
+        font-size: 1rem;
         font-weight: 700;
 
         box-shadow:
-            0 8px 22px rgba(124,108,255,0.28);
+            0 8px 25px
+            rgba(109, 114, 255, 0.28);
     }
 
     .pp-brand-name {
         font-family: var(--font-display);
-
         font-size: 1.05rem;
-        font-weight: 800;
-
-        letter-spacing: -0.03em;
+        font-weight: 700;
     }
 
     .pp-brand-sub {
-        margin: 0.25rem 0 1.8rem 45px;
+        margin:
+            0.3rem
+            0
+            1.8rem
+            3rem;
 
         color: var(--text-faint);
 
-        font-family: var(--font-mono);
-        font-size: 0.61rem;
+        font-size: 0.62rem;
+        font-weight: 600;
 
-        letter-spacing: 0.12em;
+        letter-spacing: 0.14em;
         text-transform: uppercase;
     }
 
     section[data-testid="stSidebar"]
     div[role="radiogroup"] {
-        gap: 5px;
+        gap: 0.2rem;
     }
 
     section[data-testid="stSidebar"]
     div[role="radiogroup"]
     label {
-        padding: 9px 11px !important;
+        padding: 0.7rem 0.85rem !important;
 
         border-radius: 9px;
 
         transition:
-            background 0.18s ease,
-            color 0.18s ease;
+            background 0.2s ease,
+            color 0.2s ease;
     }
 
     section[data-testid="stSidebar"]
     div[role="radiogroup"]
     label:hover {
-        background: rgba(255,255,255,0.035);
+        background: rgba(255, 255, 255, 0.035);
     }
 
     section[data-testid="stSidebar"]
     div[role="radiogroup"]
     label:has(input:checked) {
         background: var(--primary-soft);
-
-        border: 1px solid rgba(124,108,255,0.16);
     }
 
     section[data-testid="stSidebar"]
     div[role="radiogroup"]
     label p {
-        font-size: 0.86rem;
-        font-weight: 500;
-
         color: var(--text-muted);
+        font-size: 0.88rem;
+        font-weight: 500;
     }
 
     section[data-testid="stSidebar"]
@@ -346,292 +334,279 @@ st.markdown(
     }
 
     .pp-user-card {
-        margin-top: 1.8rem;
+        margin-top: 1.5rem;
         padding-top: 1.2rem;
 
         border-top: 1px solid var(--border);
     }
 
     .pp-user-name {
-        font-family: var(--font-display);
-        font-weight: 700;
-        font-size: 0.88rem;
+        font-size: 0.9rem;
+        font-weight: 600;
     }
 
     .pp-user-role {
-        margin-top: 3px;
-
-        font-size: 0.73rem;
+        margin-top: 0.2rem;
 
         color: var(--text-faint);
+        font-size: 0.75rem;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        5. TYPOGRAPHY
-    ================================================================= */
+    ========================================================= */
 
     .pp-eyebrow {
         margin-bottom: 0.45rem;
 
-        font-family: var(--font-mono);
-        font-size: 0.68rem;
-        font-weight: 500;
-
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
-
         color: var(--cyan);
+
+        font-size: 0.68rem;
+        font-weight: 700;
+
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
     }
 
     .pp-section-title {
-        margin: 0;
+        margin:
+            0
+            0
+            0.4rem
+            0;
 
-        font-size: 1.45rem;
-        font-weight: 800;
-
-        letter-spacing: -0.035em;
+        font-size: 1.55rem;
+        font-weight: 700;
     }
 
     .pp-section-description {
-        margin-top: 0.45rem;
+        margin: 0 0 1.7rem 0;
 
         color: var(--text-muted);
+
         font-size: 0.9rem;
+        line-height: 1.6;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        6. BUTTONS
-    ================================================================= */
+    ========================================================= */
 
     .stButton > button {
         min-height: 42px;
 
-        border-radius: 10px;
-
         background: var(--surface-raised);
+        color: var(--text-primary);
 
         border: 1px solid var(--border-strong);
-
-        color: var(--text-primary);
+        border-radius: 10px;
 
         font-family: var(--font-body);
         font-weight: 600;
 
         transition:
-            transform 0.16s ease,
-            background 0.16s ease,
-            border-color 0.16s ease;
+            transform 0.18s ease,
+            border-color 0.18s ease,
+            background 0.18s ease;
     }
 
     .stButton > button:hover {
-        transform: translateY(-1px);
-
         background: var(--surface-hover);
+        border-color: rgba(109, 114, 255, 0.55);
 
-        border-color:
-            rgba(124,108,255,0.4);
+        transform: translateY(-1px);
     }
 
     div[data-testid="stFormSubmitButton"] > button,
-    .pp-primary-action button {
+    .pp-primary-btn button {
         background:
             linear-gradient(
                 135deg,
-                #7668F8,
-                #8B7CFF
+                var(--primary),
+                var(--violet)
             ) !important;
+
+        color: white !important;
 
         border: none !important;
 
         box-shadow:
-            0 10px 28px rgba(124,108,255,0.28);
+            0 10px 30px
+            rgba(109, 114, 255, 0.28);
+    }
+
+    div[data-testid="stFormSubmitButton"] > button:hover,
+    .pp-primary-btn button:hover {
+        opacity: 0.94;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        7. CARDS
-    ================================================================= */
+    ========================================================= */
 
     .pp-card {
+        background: rgba(21, 28, 43, 0.82);
+
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+
         padding: 1.35rem;
 
-        background:
-            rgba(20,24,34,0.78);
-
-        border:
-            1px solid var(--border);
-
-        border-radius:
-            var(--radius-md);
-
-        box-shadow:
-            var(--shadow-card);
+        box-shadow: var(--shadow-card);
     }
 
     .pp-card:hover {
-        border-color:
-            rgba(255,255,255,0.1);
+        border-color: var(--border-strong);
     }
 
 
-    /* ================================================================
+    /* =========================================================
        8. LANDING PAGE
-    ================================================================= */
-
-    .pp-landing {
-        max-width: 900px;
-
-        margin: auto;
-
-        padding:
-            4.5rem 1rem
-            2.5rem;
-    }
+    ========================================================= */
 
     .pp-landing-hero {
+        padding: 4rem 1rem 2.5rem;
         text-align: center;
     }
 
     .pp-landing-badge {
         display: inline-flex;
-        align-items: center;
-        gap: 8px;
 
-        margin-bottom: 1.3rem;
         padding: 0.45rem 0.9rem;
 
-        background:
-            rgba(124,108,255,0.08);
+        margin-bottom: 1.2rem;
 
         border:
-            1px solid rgba(124,108,255,0.2);
+            1px solid
+            rgba(66, 217, 245, 0.2);
 
         border-radius: 999px;
 
-        color: #B8B1FF;
+        background:
+            rgba(66, 217, 245, 0.05);
+
+        color: var(--cyan);
 
         font-family: var(--font-mono);
         font-size: 0.7rem;
 
-        letter-spacing: 0.06em;
+        letter-spacing: 0.08em;
     }
 
-    .pp-landing h1 {
+    .pp-landing-hero h1 {
         margin: 0;
 
-        font-size: clamp(3rem, 6vw, 5rem);
+        font-size: 3.4rem;
         font-weight: 800;
 
-        letter-spacing: -0.06em;
-        line-height: 1;
+        line-height: 1.05;
+
+        background:
+            linear-gradient(
+                135deg,
+                #ffffff,
+                #aeb4ff
+            );
+
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
 
-    .pp-landing h1 span {
-        color: var(--violet);
-    }
-
-    .pp-landing-subtitle {
-        max-width: 620px;
-
-        margin:
-            1.2rem auto
-            0;
+    .pp-tagline {
+        margin-top: 1rem;
 
         color: var(--text-secondary);
 
-        font-size: 1.05rem;
-        line-height: 1.75;
+        font-size: 1.1rem;
     }
 
-    .pp-feature {
-        min-height: 170px;
+    .pp-landing-description {
+        max-width: 650px;
 
-        padding: 1.4rem;
+        margin:
+            0
+            auto
+            2.5rem;
+
+        text-align: center;
+
+        color: var(--text-muted);
+
+        line-height: 1.7;
+    }
+
+    .pp-feature-card {
+        height: 100%;
+
+        padding: 1.5rem;
 
         background:
-            rgba(17,20,28,0.8);
+            rgba(21, 28, 43, 0.75);
 
-        border:
-            1px solid var(--border);
-
-        border-radius:
-            var(--radius-md);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
 
         transition:
             transform 0.2s ease,
             border-color 0.2s ease;
     }
 
-    .pp-feature:hover {
+    .pp-feature-card:hover {
         transform: translateY(-4px);
 
         border-color:
-            rgba(124,108,255,0.28);
+            rgba(109, 114, 255, 0.4);
     }
 
-    .pp-feature-number {
-        margin-bottom: 1rem;
-
-        color: var(--primary);
-
-        font-family: var(--font-mono);
-        font-size: 0.72rem;
-    }
-
-    .pp-feature-title {
+    .pp-feature-card-title {
         font-family: var(--font-display);
-
         font-size: 1rem;
         font-weight: 700;
     }
 
-    .pp-feature-text {
-        margin-top: 0.5rem;
+    .pp-feature-card p {
+        margin-top: 0.55rem;
 
         color: var(--text-muted);
 
-        font-size: 0.85rem;
-        line-height: 1.65;
+        font-size: 0.86rem;
+        line-height: 1.6;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        9. ONBOARDING
-    ================================================================= */
+    ========================================================= */
 
     .pp-onboarding-header {
-        max-width: 620px;
-
-        margin:
-            1rem auto
-            2.5rem;
-
+        margin-bottom: 2rem;
         text-align: center;
     }
 
     .pp-onboarding-header h2 {
-        margin: 0;
+        margin: 0.3rem 0;
 
-        font-size: 2rem;
-
-        letter-spacing: -0.04em;
+        font-size: 1.8rem;
     }
 
     .pp-step-header {
         display: flex;
         align-items: center;
-        gap: 10px;
+
+        gap: 0.75rem;
 
         margin:
-            1.8rem 0
+            1.7rem
+            0
             0.9rem;
     }
 
-    .pp-step-number {
-        width: 28px;
-        height: 28px;
+    .pp-step-num {
+        width: 27px;
+        height: 27px;
 
         display: flex;
         align-items: center;
@@ -639,579 +614,854 @@ st.markdown(
 
         border-radius: 50%;
 
-        background:
-            var(--primary-soft);
+        background: var(--primary-soft);
 
         border:
-            1px solid rgba(124,108,255,0.25);
+            1px solid
+            rgba(109, 114, 255, 0.25);
 
-        color: var(--violet);
+        color: var(--primary);
 
         font-family: var(--font-mono);
         font-size: 0.72rem;
     }
 
     .pp-step-title {
-        font-family: var(--font-display);
-
-        font-size: 1rem;
+        font-size: 0.96rem;
         font-weight: 700;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        10. DASHBOARD
-    ================================================================= */
+    ========================================================= */
 
     .pp-metric-card {
-        min-height: 142px;
+        height: 100%;
 
         padding: 1.2rem;
 
         background:
-            rgba(20,24,34,0.8);
+            rgba(21, 28, 43, 0.82);
 
-        border:
-            1px solid var(--border);
-
-        border-radius:
-            var(--radius-md);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
 
         transition:
-            transform 0.18s ease,
-            border-color 0.18s ease;
+            transform 0.2s ease,
+            border-color 0.2s ease;
     }
 
     .pp-metric-card:hover {
         transform: translateY(-3px);
-
-        border-color:
-            rgba(255,255,255,0.12);
+        border-color: var(--border-strong);
     }
 
     .pp-metric-label {
         color: var(--text-faint);
 
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 600;
 
+        letter-spacing: 0.06em;
         text-transform: uppercase;
-        letter-spacing: 0.07em;
     }
 
     .pp-metric-value {
-        margin: 0.65rem 0 0.35rem;
+        margin: 0.4rem 0;
 
         font-family: var(--font-display);
-
-        font-size: 2rem;
-        font-weight: 800;
-
-        letter-spacing: -0.04em;
+        font-size: 1.8rem;
+        font-weight: 700;
     }
 
-    .pp-metric-description {
-        font-size: 0.78rem;
+    .pp-metric-desc {
+        color: var(--text-muted);
+        font-size: 0.76rem;
+    }
 
+    .trend-good {
+        color: var(--success);
+    }
+
+    .trend-warn {
+        color: var(--warning);
+    }
+
+    .trend-bad {
+        color: var(--danger);
+    }
+
+    .trend-neutral {
         color: var(--text-muted);
     }
 
-    .trend-good { color: var(--success); }
-    .trend-warning { color: var(--warning); }
-    .trend-danger { color: var(--danger); }
+    .pp-dashboard-list-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+
+        padding: 0.8rem 0;
+
+        border-bottom: 1px solid var(--border);
+    }
+
+    .pp-dashboard-list-item:last-child {
+        border-bottom: none;
+    }
+
+    .pp-dashboard-skill {
+        color: var(--text-secondary);
+        font-size: 0.88rem;
+    }
+
+    .pp-dashboard-priority {
+        padding: 0.25rem 0.55rem;
+
+        border-radius: 999px;
+
+        background: var(--primary-soft);
+
+        color: #aeb4ff;
+
+        font-family: var(--font-mono);
+        font-size: 0.67rem;
+    }
 
 
-    /* ================================================================
+    /* =========================================================
        11. NEXT BEST ACTION
-    ================================================================= */
+    ========================================================= */
 
     .pp-nba-card {
-        position: relative;
-
         padding: 2rem;
-
-        overflow: hidden;
 
         background:
             linear-gradient(
-                135deg,
-                rgba(124,108,255,0.13),
-                rgba(21,25,35,0.95) 45%
+                145deg,
+                rgba(25, 32, 55, 0.95),
+                rgba(17, 22, 37, 0.95)
             );
 
         border:
-            1px solid rgba(124,108,255,0.22);
+            1px solid
+            rgba(109, 114, 255, 0.28);
 
-        border-radius:
-            var(--radius-lg);
+        border-radius: var(--radius-lg);
+
+        box-shadow:
+            0 20px 60px
+            rgba(0, 0, 0, 0.2);
     }
 
-    .pp-nba-label {
-        margin-bottom: 0.65rem;
+    .pp-nba-eyebrow {
+        margin-bottom: 0.5rem;
 
         color: var(--cyan);
 
         font-family: var(--font-mono);
-        font-size: 0.68rem;
+        font-size: 0.7rem;
 
         letter-spacing: 0.12em;
         text-transform: uppercase;
     }
 
     .pp-nba-skill {
-        margin-bottom: 1.6rem;
+        margin-bottom: 1.5rem;
 
         font-family: var(--font-display);
-
-        font-size: clamp(1.7rem, 3vw, 2.3rem);
-        font-weight: 800;
-
-        letter-spacing: -0.045em;
+        font-size: 2rem;
+        font-weight: 700;
     }
 
     .pp-nba-stats {
         display: flex;
-        flex-wrap: wrap;
 
         gap: 2.5rem;
+        flex-wrap: wrap;
     }
 
     .pp-nba-stat-label {
         color: var(--text-faint);
 
-        font-family: var(--font-mono);
-        font-size: 0.65rem;
+        font-size: 0.68rem;
 
         letter-spacing: 0.08em;
         text-transform: uppercase;
     }
 
     .pp-nba-stat-value {
-        margin-top: 0.35rem;
+        margin-top: 0.3rem;
 
         font-family: var(--font-display);
-
         font-size: 1.1rem;
         font-weight: 700;
     }
 
-    .pp-nba-reasons {
-        margin-top: 1.7rem;
-        padding-top: 1.4rem;
+    .pp-nba-why {
+        margin-top: 1.6rem;
+        padding-top: 1.3rem;
 
-        border-top:
-            1px solid var(--border);
+        border-top: 1px solid var(--border);
     }
 
-    .pp-reason {
+    .pp-insight-row {
         display: flex;
-        gap: 10px;
 
-        margin-top: 0.75rem;
+        align-items: flex-start;
 
-        color: var(--text-secondary);
+        gap: 0.7rem;
 
-        font-size: 0.88rem;
+        padding: 0.4rem 0;
     }
 
-    .pp-reason-icon {
-        color: var(--cyan);
-    }
-
-
-    /* ================================================================
-       12. ROADMAP
-    ================================================================= */
-
-    .pp-roadmap-step {
-        padding: 1.2rem 1.3rem;
-
-        background:
-            rgba(20,24,34,0.72);
-
-        border:
-            1px solid var(--border);
-
-        border-radius:
-            var(--radius-md);
-
-        margin-bottom: 0.8rem;
-    }
-
-    .pp-roadmap-step-active {
-        border-color:
-            rgba(124,108,255,0.35);
-    }
-
-    .pp-roadmap-step-completed {
-        border-color:
-            rgba(74,222,128,0.22);
-    }
-
-    .pp-roadmap-step-future {
-        opacity: 0.72;
-    }
-
-    .pp-roadmap-step-number {
-        color: var(--text-faint);
-
-        font-family: var(--font-mono);
-        font-size: 0.68rem;
-
-        letter-spacing: 0.1em;
-    }
-
-    .pp-roadmap-skill {
-        margin-top: 0.35rem;
-
-        font-family: var(--font-display);
-
-        font-size: 1.08rem;
+    .pp-insight-check {
+        color: var(--success);
         font-weight: 700;
     }
 
-    .pp-roadmap-meta {
-        margin-top: 0.35rem;
-
-        color: var(--text-muted);
-
-        font-size: 0.78rem;
-    }
-
-    .pp-resource-chip {
-        display: inline-block;
-
-        margin:
-            0.4rem 0.35rem
-            0 0;
-
-        padding:
-            0.38rem 0.7rem;
-
-        background:
-            var(--surface-hover);
-
-        border:
-            1px solid var(--border);
-
-        border-radius: 999px;
-
+    .pp-insight-text {
         color: var(--text-secondary);
 
-        font-size: 0.75rem;
+        font-size: 0.88rem;
+        line-height: 1.55;
     }
 
-
-    /* ================================================================
-       13. PATH HEALTH
-    ================================================================= */
-
-    .pp-health-summary {
-        padding: 1.4rem;
-
-        background:
-            rgba(20,24,34,0.75);
-
-        border:
-            1px solid var(--border);
-
-        border-radius:
-            var(--radius-md);
+    .pp-score-row {
+        margin-bottom: 1rem;
     }
 
-    .pp-risk-card {
-        position: relative;
-
-        padding: 1.15rem 1.25rem;
-
-        margin-bottom: 0.75rem;
-
-        background:
-            rgba(20,24,34,0.72);
-
-        border:
-            1px solid var(--border);
-
-        border-radius:
-            var(--radius-md);
-    }
-
-    .pp-risk-card-high {
-        border-left:
-            3px solid rgba(251,113,133,0.75);
-    }
-
-    .pp-risk-card-medium {
-        border-left:
-            3px solid rgba(251,191,36,0.75);
-    }
-
-    .pp-risk-card-low {
-        border-left:
-            3px solid rgba(94,234,212,0.65);
-    }
-
-    .pp-risk-top {
+    .pp-score-top {
         display: flex;
-        align-items: center;
         justify-content: space-between;
+
+        margin-bottom: 0.4rem;
+    }
+
+    .pp-score-name {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+    }
+
+    .pp-score-num {
+        font-family: var(--font-mono);
+        font-size: 0.76rem;
+    }
+
+    .pp-score-track {
+        height: 6px;
+
+        overflow: hidden;
+
+        background: var(--surface-soft);
+
+        border-radius: 99px;
+    }
+
+    .pp-score-fill {
+        height: 100%;
+
+        background:
+            linear-gradient(
+                90deg,
+                var(--primary),
+                var(--cyan)
+            );
+
+        border-radius: 99px;
+    }
+
+
+    /* =========================================================
+       12. ROADMAP
+    ========================================================= */
+
+    .pp-roadmap-overview {
+        padding: 1.5rem;
+
+        background:
+            linear-gradient(
+                145deg,
+                rgba(25, 32, 55, 0.9),
+                rgba(17, 22, 37, 0.9)
+            );
+
+        border:
+            1px solid
+            rgba(109, 114, 255, 0.2);
+
+        border-radius: var(--radius-lg);
+    }
+
+    .pp-roadmap-overview-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
 
         gap: 1rem;
     }
 
-    .pp-risk-severity {
-        padding:
-            0.25rem 0.55rem;
+    .pp-roadmap-overview-label {
+        color: var(--text-faint);
 
-        border-radius: 999px;
+        font-size: 0.68rem;
+        font-weight: 700;
 
-        font-family: var(--font-mono);
-        font-size: 0.62rem;
-
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
+        letter-spacing: 0.1em;
     }
 
-    .pp-risk-severity-high {
-        background:
-            rgba(251,113,133,0.08);
-
-        color: #FDA4AF;
-    }
-
-    .pp-risk-severity-medium {
-        background:
-            rgba(251,191,36,0.08);
-
-        color: #FCD34D;
-    }
-
-    .pp-risk-severity-low {
-        background:
-            rgba(94,234,212,0.07);
-
-        color: var(--cyan);
-    }
-
-    .pp-risk-title {
-        margin-top: 0.7rem;
+    .pp-roadmap-overview-value {
+        margin-top: 0.45rem;
 
         font-family: var(--font-display);
-
-        font-size: 0.95rem;
+        font-size: 1.3rem;
         font-weight: 700;
     }
 
-    .pp-risk-message {
-        margin-top: 0.35rem;
+    .pp-roadmap-overview-value span {
+        margin-left: 0.3rem;
 
         color: var(--text-muted);
 
-        font-size: 0.84rem;
+        font-family: var(--font-body);
+        font-size: 0.82rem;
+        font-weight: 400;
     }
 
-    .pp-risk-action {
-        margin-top: 0.8rem;
-        padding-top: 0.75rem;
-
-        border-top:
-            1px solid var(--border);
-
-        color: var(--text-secondary);
-
-        font-size: 0.8rem;
-    }
-
-    .pp-risk-action-label {
-        color: var(--text-faint);
+    .pp-roadmap-percent {
+        color: var(--cyan);
 
         font-family: var(--font-mono);
-        font-size: 0.65rem;
-
-        text-transform: uppercase;
+        font-size: 1.2rem;
     }
 
+    .pp-roadmap-progress-track {
+        height: 7px;
 
-    /* ================================================================
-       14. AI ASSISTANT
-    ================================================================= */
+        overflow: hidden;
 
-    .pp-assistant-header {
-        padding: 1.7rem;
+        margin-top: 1.2rem;
 
-        margin-bottom: 1rem;
+        background: var(--surface-soft);
+
+        border-radius: 99px;
+    }
+
+    .pp-roadmap-progress-fill {
+        height: 100%;
 
         background:
             linear-gradient(
-                135deg,
-                rgba(124,108,255,0.12),
-                rgba(20,24,34,0.75)
+                90deg,
+                var(--primary),
+                var(--cyan)
             );
 
-        border:
-            1px solid rgba(124,108,255,0.18);
+        border-radius: 99px;
 
-        border-radius:
-            var(--radius-lg);
+        transition: width 0.4s ease;
     }
 
-    .pp-assistant-title-row {
+    .pp-roadmap-timeline {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 12px;
+
+        height: 100%;
     }
 
-    .pp-assistant-icon {
-        width: 42px;
-        height: 42px;
+    .pp-roadmap-dot {
+        width: 30px;
+        height: 30px;
 
         display: flex;
         align-items: center;
         justify-content: center;
 
-        background:
-            var(--primary-soft);
+        flex-shrink: 0;
+
+        border-radius: 50%;
+
+        background: var(--surface-raised);
 
         border:
-            1px solid rgba(124,108,255,0.22);
-
-        border-radius: 13px;
-
-        color: var(--violet);
-
-        font-size: 1.1rem;
-    }
-
-    .pp-assistant-title {
-        font-family: var(--font-display);
-
-        font-size: 1.15rem;
-        font-weight: 800;
-    }
-
-    .pp-assistant-subtitle {
-        margin-top: 3px;
-
-        color: var(--text-muted);
-
-        font-size: 0.82rem;
-    }
-
-    .pp-question-label {
-        margin:
-            1.5rem 0
-            0.65rem;
+            2px solid
+            var(--text-faint);
 
         color: var(--text-faint);
 
         font-family: var(--font-mono);
+        font-size: 0.75rem;
+    }
+
+    .roadmap-in-progress {
+        background: var(--primary-soft);
+
+        border-color: var(--primary);
+
+        color: var(--primary);
+    }
+
+    .roadmap-completed {
+        background: var(--success-soft);
+
+        border-color: var(--success);
+
+        color: var(--success);
+    }
+
+    .roadmap-not-started {
+        border-color: var(--text-faint);
+        color: var(--text-faint);
+    }
+
+    .pp-roadmap-timeline-line {
+        width: 2px;
+
+        min-height: 90px;
+        flex-grow: 1;
+
+        margin: 5px 0;
+
+        background:
+            linear-gradient(
+                var(--border-strong),
+                rgba(255,255,255,0.03)
+            );
+    }
+
+    .pp-roadmap-step-card {
+        padding: 1.25rem;
+
+        background:
+            rgba(21, 28, 43, 0.78);
+
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+
+        transition:
+            border-color 0.2s ease,
+            transform 0.2s ease;
+    }
+
+    .pp-roadmap-step-card:hover {
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+    }
+
+    .pp-roadmap-step-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+
+        gap: 1rem;
+    }
+
+    .pp-roadmap-step-number {
+        margin-bottom: 0.35rem;
+
+        color: var(--text-faint);
+
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+
+        letter-spacing: 0.08em;
+    }
+
+    .pp-step-skill {
+        font-family: var(--font-display);
+        font-size: 1.08rem;
+        font-weight: 700;
+    }
+
+    .pp-roadmap-status-badge {
+        padding: 0.35rem 0.65rem;
+
+        border-radius: 999px;
+
+        font-family: var(--font-mono);
         font-size: 0.65rem;
+
+        white-space: nowrap;
+    }
+
+    .pp-roadmap-status-badge.roadmap-in-progress {
+        background: var(--primary-soft);
+        color: #aeb4ff;
+    }
+
+    .pp-roadmap-status-badge.roadmap-completed {
+        background: var(--success-soft);
+        color: var(--success);
+    }
+
+    .pp-roadmap-status-badge.roadmap-not-started {
+        background: rgba(255,255,255,0.04);
+        color: var(--text-muted);
+    }
+
+    .pp-roadmap-meta {
+        display: flex;
+
+        gap: 0.55rem;
+
+        margin-top: 0.8rem;
+
+        color: var(--text-faint);
+
+        font-size: 0.78rem;
+    }
+
+    .pp-roadmap-meta b {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .pp-roadmap-detail {
+        padding:
+            0.9rem
+            0.2rem;
+    }
+
+    .pp-roadmap-detail-label {
+        margin-bottom: 0.35rem;
+
+        color: var(--text-faint);
+
+        font-size: 0.64rem;
+        font-weight: 700;
 
         letter-spacing: 0.1em;
         text-transform: uppercase;
     }
 
-    .pp-suggestion {
-        width: 100%;
+    .pp-roadmap-detail-text {
+        color: var(--text-muted);
 
-        min-height: 44px;
-
-        background:
-            rgba(20,24,34,0.7) !important;
-
-        border:
-            1px solid var(--border) !important;
-
-        border-radius: 999px !important;
-
-        color:
-            var(--text-secondary) !important;
-
-        font-size: 0.8rem !important;
+        font-size: 0.83rem;
+        line-height: 1.5;
     }
 
-    .pp-answer-container {
-        margin-top: 1.4rem;
+    .pp-roadmap-resources {
+        margin-bottom: 0.9rem;
+    }
 
+    .pp-resource-list {
+        display: flex;
+        flex-wrap: wrap;
+
+        gap: 0.5rem;
+    }
+
+    .pp-resource-chip {
+        display: inline-flex;
+
+        padding: 0.42rem 0.7rem;
+
+        background:
+            rgba(109, 114, 255, 0.07);
+
+        border:
+            1px solid
+            rgba(109, 114, 255, 0.16);
+
+        border-radius: 999px;
+
+        color: var(--text-secondary);
+
+        font-size: 0.73rem;
+
+        text-decoration: none;
+
+        transition:
+            background 0.2s ease,
+            border-color 0.2s ease;
+    }
+
+    .pp-resource-chip:hover {
+        background: var(--primary-soft);
+
+        border-color:
+            rgba(109, 114, 255, 0.4);
+
+        color: white;
+    }
+
+    .pp-summary-card {
+        padding: 1.2rem;
+
+        background: var(--surface-raised);
+
+        border: 1px solid var(--border);
+        border-radius: var(--radius-md);
+
+        text-align: center;
+    }
+
+    .pp-summary-value {
+        font-family: var(--font-display);
+        font-size: 1.6rem;
+        font-weight: 700;
+    }
+
+    .pp-summary-label {
+        margin-top: 0.3rem;
+
+        color: var(--text-faint);
+
+        font-size: 0.64rem;
+        font-weight: 700;
+
+        letter-spacing: 0.08em;
+    }
+
+
+    /* =========================================================
+       13. PATH HEALTH
+    ========================================================= */
+
+    .pp-health-score-card {
         padding: 1.5rem;
+
+        background: var(--surface-raised);
+
+        border: 1px solid var(--border);
+        border-radius: var(--radius-lg);
+
+        text-align: center;
+    }
+
+    .pp-badge {
+        display: inline-block;
+
+        padding: 0.35rem 0.75rem;
+
+        border-radius: 999px;
+
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        font-weight: 500;
+    }
+
+    .badge-healthy {
+        background: var(--success-soft);
+        color: var(--success);
+
+        border:
+            1px solid
+            rgba(57, 217, 138, 0.22);
+    }
+
+    .badge-atrisk {
+        background: var(--warning-soft);
+        color: var(--warning);
+
+        border:
+            1px solid
+            rgba(246, 189, 69, 0.22);
+    }
+
+    .badge-critical {
+        background: var(--danger-soft);
+        color: var(--danger);
+
+        border:
+            1px solid
+            rgba(240, 113, 120, 0.22);
+    }
+
+    .pp-risk-card {
+        position: relative;
+
+        margin-bottom: 0.8rem;
+        padding: 1.1rem 1.2rem;
+
+        background: rgba(21, 28, 43, 0.8);
+
+        border: 1px solid var(--border);
+        border-left: 3px solid var(--text-muted);
+
+        border-radius: 12px;
+    }
+
+    .pp-risk-high {
+        border-left-color: var(--danger);
+    }
+
+    .pp-risk-medium {
+        border-left-color: var(--warning);
+    }
+
+    .pp-risk-low {
+        border-left-color: var(--cyan);
+    }
+
+    .pp-risk-severity {
+        margin-bottom: 0.35rem;
+
+        font-size: 0.64rem;
+        font-weight: 700;
+
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .pp-risk-high .pp-risk-severity {
+        color: var(--danger);
+    }
+
+    .pp-risk-medium .pp-risk-severity {
+        color: var(--warning);
+    }
+
+    .pp-risk-low .pp-risk-severity {
+        color: var(--cyan);
+    }
+
+    .pp-risk-title {
+        font-family: var(--font-display);
+        font-size: 0.96rem;
+        font-weight: 700;
+    }
+
+    .pp-risk-msg {
+        margin-top: 0.4rem;
+
+        color: var(--text-muted);
+
+        font-size: 0.84rem;
+        line-height: 1.55;
+    }
+
+    .pp-risk-action {
+        margin-top: 0.7rem;
+
+        color: var(--text-secondary);
+
+        font-size: 0.78rem;
+    }
+
+
+    /* =========================================================
+       14. AI ASSISTANT
+    ========================================================= */
+
+    .pp-assistant-intro {
+        padding: 1.6rem;
+
+        margin-bottom: 1.2rem;
 
         background:
             linear-gradient(
-                180deg,
-                rgba(25,29,42,0.92),
-                rgba(17,20,28,0.92)
+                145deg,
+                rgba(25, 32, 55, 0.9),
+                rgba(17, 22, 37, 0.9)
             );
 
         border:
-            1px solid rgba(124,108,255,0.2);
+            1px solid
+            rgba(155, 109, 255, 0.22);
 
-        border-radius:
-            var(--radius-lg);
-
-        box-shadow:
-            0 16px 45px rgba(0,0,0,0.18);
+        border-radius: var(--radius-lg);
     }
 
-    .pp-answer-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    .pp-assistant-title {
+        margin-bottom: 0.4rem;
 
-        margin-bottom: 0.9rem;
+        font-family: var(--font-display);
+        font-size: 1.3rem;
+        font-weight: 700;
+    }
+
+    .pp-assistant-subtitle {
+        color: var(--text-muted);
+
+        font-size: 0.88rem;
+        line-height: 1.6;
+    }
+
+    .pp-assistant-answer {
+        margin-top: 1rem;
+        padding: 1.4rem;
+
+        background:
+            rgba(21, 28, 43, 0.9);
+
+        border:
+            1px solid
+            rgba(109, 114, 255, 0.2);
+
+        border-radius: var(--radius-lg);
+
+        line-height: 1.7;
+    }
+
+    .pp-answer-label {
+        margin-bottom: 0.6rem;
 
         color: var(--cyan);
 
         font-family: var(--font-mono);
-        font-size: 0.67rem;
+        font-size: 0.68rem;
 
         letter-spacing: 0.1em;
         text-transform: uppercase;
     }
 
-    .pp-answer-content {
+    .pp-answer-text {
         color: var(--text-secondary);
 
-        font-size: 0.92rem;
-        line-height: 1.8;
+        font-size: 0.9rem;
+        line-height: 1.7;
     }
 
 
-    /* ================================================================
+    /* =========================================================
        15. RESPONSIVE ADJUSTMENTS
-    ================================================================= */
+    ========================================================= */
 
     @media (max-width: 768px) {
 
         .block-container {
-            padding-top: 1.3rem;
+            padding-top: 1.5rem;
         }
 
-        .pp-page-header {
-            flex-direction: column;
-        }
-
-        .pp-status-card {
-            width: 100%;
-        }
-
-        .pp-landing {
+        .pp-landing-hero {
             padding-top: 2.5rem;
         }
 
-        .pp-landing h1 {
-            font-size: 3rem;
+        .pp-landing-hero h1 {
+            font-size: 2.5rem;
         }
 
-        .pp-nba-card {
-            padding: 1.4rem;
+        .pp-page-header {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .pp-status-chip {
+            width: 100%;
+        }
+
+        .pp-nba-skill {
+            font-size: 1.55rem;
         }
 
         .pp-nba-stats {
-            gap: 1.5rem;
+            gap: 1.3rem;
         }
 
-        .pp-assistant-header {
-            padding: 1.25rem;
+        .pp-roadmap-overview-top {
+            align-items: flex-start;
+            flex-direction: column;
+        }
+
+        .pp-roadmap-meta {
+            flex-wrap: wrap;
+        }
+
+        .pp-roadmap-timeline-line {
+            min-height: 70px;
         }
     }
 
@@ -1221,11 +1471,12 @@ st.markdown(
 )
 
 
-# ======================================================================
+# ==============================================================
 # SESSION STATE
-# ======================================================================
+# ==============================================================
 
 def init_session_state():
+
     defaults = {
         "stage": "welcome",
         "profile": None,
@@ -1233,10 +1484,10 @@ def init_session_state():
         "adaptation_state": AdaptationState(),
         "roadmap_progress": {},
         "nav_section": "Overview",
-        "assistant_question": "",
     }
 
     for key, value in defaults.items():
+
         if key not in st.session_state:
             st.session_state[key] = value
 
@@ -1244,56 +1495,86 @@ def init_session_state():
 init_session_state()
 
 
-# ======================================================================
+# ==============================================================
 # BACKEND INITIALIZATION
-# ======================================================================
+# ==============================================================
 
 @st.cache_resource
 def get_engine():
+
     try:
         return IntelligenceEngine()
-    except Exception as e:
-        st.error(f"Failed to load intelligence engine: {e}")
+
+    except Exception as error:
+        st.error(
+            f"Failed to load intelligence engine: {error}"
+        )
         return None
 
 
 @st.cache_resource
 def get_assistant():
+
     return AIAssistant()
 
 
 engine = get_engine()
 assistant = get_assistant()
-adaptive_engine = AdaptiveEngine(engine) if engine else None
+
+adaptive_engine = (
+    AdaptiveEngine(engine)
+    if engine
+    else None
+)
 
 
-# ======================================================================
-# HELPERS
-# ======================================================================
+# ==============================================================
+# SAFE CALL
+# ==============================================================
 
-def safe_call(fn, *args, **kwargs):
-    if fn is None:
+def safe_call(function, *args, **kwargs):
+
+    if function is None:
         return None
 
     try:
-        return fn(*args, **kwargs)
-    except Exception as e:
-        st.warning(f"A calculation step had an issue: {e}")
+        return function(*args, **kwargs)
+
+    except Exception as error:
+
+        st.warning(
+            f"A calculation step had an issue: {error}"
+        )
+
         return None
 
+
+# ==============================================================
+# CAREER OPTIONS
+# ==============================================================
 
 def get_career_options():
+
     try:
-        with open("data/career_paths.json", "r") as file:
+
+        with open(
+            "data/career_paths.json",
+            "r"
+        ) as file:
+
             data = json.load(file)
 
         if isinstance(data, dict):
             return list(data.keys())
 
         if isinstance(data, list):
+
             return [
-                item.get("career_goal") or item.get("name")
+                item.get("career_goal")
+                or item.get("name")
+
                 for item in data
+
                 if isinstance(item, dict)
             ]
 
@@ -1308,37 +1589,50 @@ def get_career_options():
     ]
 
 
+# ==============================================================
+# ENGINE PIPELINE
+# ==============================================================
+
 def run_engine_pipeline(profile):
+
     output = {
-        "skill_gap": safe_call(
-            engine.analyze_skill_gap,
-            profile,
-        ),
+        "skill_gap":
+            safe_call(
+                engine.analyze_skill_gap,
+                profile,
+            ),
 
-        "readiness": safe_call(
-            engine.calculate_readiness_score,
-            profile,
-        ),
+        "readiness":
+            safe_call(
+                engine.calculate_readiness_score,
+                profile,
+            ),
 
-        "next_best_action": safe_call(
-            engine.calculate_next_best_action,
-            profile,
-        ),
+        "next_best_action":
+            safe_call(
+                engine.calculate_next_best_action,
+                profile,
+            ),
 
-        "risks": safe_call(
-            engine.detect_risks,
-            profile,
-        ) or [],
+        "risks":
+            safe_call(
+                engine.detect_risks,
+                profile,
+            )
+            or [],
 
-        "path_health": safe_call(
-            engine.calculate_path_health,
-            profile,
-        ),
+        "path_health":
+            safe_call(
+                engine.calculate_path_health,
+                profile,
+            ),
 
-        "roadmap": safe_call(
-            engine.generate_roadmap,
-            profile,
-        ) or [],
+        "roadmap":
+            safe_call(
+                engine.generate_roadmap,
+                profile,
+            )
+            or [],
     }
 
     st.session_state.engine_output = output
@@ -1346,34 +1640,63 @@ def run_engine_pipeline(profile):
     return output
 
 
-# ======================================================================
-# WELCOME
-# ======================================================================
+# ==============================================================
+# STATUS HELPERS
+# ==============================================================
+
+def status_badge_class(status):
+
+    return {
+        "Healthy": "badge-healthy",
+        "At Risk": "badge-atrisk",
+        "Critical": "badge-critical",
+    }.get(
+        status,
+        "badge-atrisk",
+    )
+
+
+def clean(value):
+
+    return html.escape(
+        str(value)
+    )
+
+
+# ==============================================================
+# WELCOME PAGE
+# ==============================================================
 
 def render_welcome():
 
     st.markdown(
         """
-        <div class="pp-landing">
+        <div class="pp-landing-hero">
 
-            <div class="pp-landing-hero">
-
-                <div class="pp-landing-badge">
-                    ◈ INTELLIGENT LEARNING SYSTEM
-                </div>
-
-                <h1>
-                    Your next move,
-                    <span>decided intelligently.</span>
-                </h1>
-
-                <p class="pp-landing-subtitle">
-                    PathPilot analyzes where you are, where you want to go,
-                    and what is blocking you — then identifies the most
-                    valuable thing to learn next.
-                </p>
-
+            <div class="pp-landing-badge">
+                ◈ AI LEARNING INTELLIGENCE
             </div>
+
+            <h1>PathPilot AI</h1>
+
+            <p class="pp-tagline">
+                Don't just recommend what to learn.
+                Decide what to learn next.
+            </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="pp-landing-description">
+
+            PathPilot analyzes your skills, career goals,
+            prerequisites, available time and experience level
+            to determine the most valuable next step in your
+            learning journey.
 
         </div>
         """,
@@ -1382,58 +1705,87 @@ def render_welcome():
 
     col1, col2, col3 = st.columns(3)
 
-    features = [
-        (
-            "01",
-            "Decide what matters",
-            "Move beyond generic course recommendations with a single prioritized next action."
-        ),
-        (
-            "02",
-            "Detect the blockers",
-            "Understand prerequisite gaps before wasting time on skills you are not ready for."
-        ),
-        (
-            "03",
-            "Monitor your path",
-            "Track learning health, risks, progress and alignment with your career goal."
-        ),
-    ]
+    with col1:
 
-    for column, feature in zip([col1, col2, col3], features):
+        st.markdown(
+            """
+            <div class="pp-feature-card">
 
-        with column:
-
-            st.markdown(
-                f"""
-                <div class="pp-feature">
-
-                    <div class="pp-feature-number">
-                        {feature[0]}
-                    </div>
-
-                    <div class="pp-feature-title">
-                        {feature[1]}
-                    </div>
-
-                    <div class="pp-feature-text">
-                        {feature[2]}
-                    </div>
-
+                <div class="pp-eyebrow">
+                    01 · DECIDE
                 </div>
-                """,
-                unsafe_allow_html=True,
-            )
+
+                <div class="pp-feature-card-title">
+                    Next Best Action
+                </div>
+
+                <p>
+                    One prioritized learning decision instead
+                    of an overwhelming list of recommendations.
+                </p>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col2:
+
+        st.markdown(
+            """
+            <div class="pp-feature-card">
+
+                <div class="pp-eyebrow">
+                    02 · VALIDATE
+                </div>
+
+                <div class="pp-feature-card-title">
+                    Prerequisite Intelligence
+                </div>
+
+                <p>
+                    Detect learning blockers before recommending
+                    unrealistic jumps in your roadmap.
+                </p>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with col3:
+
+        st.markdown(
+            """
+            <div class="pp-feature-card">
+
+                <div class="pp-eyebrow">
+                    03 · MONITOR
+                </div>
+
+                <div class="pp-feature-card-title">
+                    Path Health
+                </div>
+
+                <p>
+                    Monitor whether your learning journey is
+                    healthy, at risk or needs attention.
+                </p>
+
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
     st.write("")
     st.write("")
 
-    _, center, _ = st.columns([1, 1.4, 1])
+    _, center, _ = st.columns([1, 1, 1])
 
     with center:
 
         st.markdown(
-            '<div class="pp-primary-action">',
+            '<div class="pp-primary-btn">',
             unsafe_allow_html=True,
         )
 
@@ -1448,13 +1800,15 @@ def render_welcome():
         )
 
     if clicked:
+
         st.session_state.stage = "profiling"
+
         st.rerun()
 
 
-# ======================================================================
+# ==============================================================
 # PROFILING
-# ======================================================================
+# ==============================================================
 
 def render_profiling():
 
@@ -1463,16 +1817,16 @@ def render_profiling():
         <div class="pp-onboarding-header">
 
             <div class="pp-eyebrow">
-                Personalization
+                ONBOARDING
             </div>
 
             <h2>
-                Build your learning profile
+                Let's build your path
             </h2>
 
-            <p class="pp-section-description">
-                Your answers help PathPilot understand your current position
-                before generating your learning path.
+            <p style="color:var(--text-muted);">
+                Three quick steps.
+                Every answer improves your recommendations.
             </p>
 
         </div>
@@ -1487,8 +1841,15 @@ def render_profiling():
         st.markdown(
             """
             <div class="pp-step-header">
-                <div class="pp-step-number">01</div>
-                <div class="pp-step-title">Your direction</div>
+
+                <div class="pp-step-num">
+                    1
+                </div>
+
+                <div class="pp-step-title">
+                    Who are you?
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True,
@@ -1496,27 +1857,34 @@ def render_profiling():
 
         name = st.text_input(
             "Name",
-            placeholder="Your name",
+            placeholder="e.g. Akshaya Reddy",
         )
 
         career_goal = st.selectbox(
             "Career Goal",
-            career_options,
+            options=career_options,
         )
 
         natural_language_goal = st.text_area(
-            "What are you trying to achieve?",
+            "In your own words, what do you want to achieve?",
             placeholder=(
-                "Example: I want to become job-ready for machine learning "
-                "and secure an internship."
+                "e.g. I want to become an ML engineer "
+                "within 6 months and land an internship."
             ),
         )
 
         st.markdown(
             """
             <div class="pp-step-header">
-                <div class="pp-step-number">02</div>
-                <div class="pp-step-title">Your current position</div>
+
+                <div class="pp-step-num">
+                    2
+                </div>
+
+                <div class="pp-step-title">
+                    Where are you now?
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True,
@@ -1539,20 +1907,27 @@ def render_profiling():
         }
 
         current_skills_raw = st.text_input(
-            "Current Skills",
-            placeholder="Python, SQL, Git",
+            "Current Skills (comma-separated)",
+            placeholder="e.g. Python Basics, SQL, Git",
         )
 
         interests_raw = st.text_input(
-            "Interests",
-            placeholder="AI, Data, Web Development",
+            "Interests (comma-separated)",
+            placeholder="e.g. AI, Data, Web Development",
         )
 
         st.markdown(
             """
             <div class="pp-step-header">
-                <div class="pp-step-number">03</div>
-                <div class="pp-step-title">Your constraints</div>
+
+                <div class="pp-step-num">
+                    3
+                </div>
+
+                <div class="pp-step-title">
+                    Your learning constraints
+                </div>
+
             </div>
             """,
             unsafe_allow_html=True,
@@ -1561,6 +1936,7 @@ def render_profiling():
         col1, col2 = st.columns(2)
 
         with col1:
+
             weekly_hours = st.number_input(
                 "Weekly Learning Hours",
                 min_value=1,
@@ -1569,6 +1945,7 @@ def render_profiling():
             )
 
         with col2:
+
             timeline_weeks = st.number_input(
                 "Target Timeline (weeks)",
                 min_value=1,
@@ -1578,7 +1955,7 @@ def render_profiling():
 
         preferred_learning_style = st.selectbox(
             "Preferred Learning Style",
-            [
+            options=[
                 "visual",
                 "reading",
                 "hands-on",
@@ -1596,18 +1973,26 @@ def render_profiling():
     if submitted:
 
         if not name.strip():
-            st.error("Please enter your name.")
+
+            st.error(
+                "Please enter your name."
+            )
+
             return
 
         current_skills = [
             skill.strip()
+
             for skill in current_skills_raw.split(",")
+
             if skill.strip()
         ]
 
         interests = [
             interest.strip()
+
             for interest in interests_raw.split(",")
+
             if interest.strip()
         ]
 
@@ -1628,10 +2013,10 @@ def render_profiling():
                 preferred_learning_style=preferred_learning_style,
             )
 
-        except Exception as e:
+        except Exception as error:
 
             st.error(
-                f"Could not build your profile: {e}"
+                f"Could not build your profile: {error}"
             )
 
             return
@@ -1639,46 +2024,53 @@ def render_profiling():
         st.session_state.profile = profile
 
         if engine is None:
+
             st.error(
-                "Intelligence engine is unavailable."
+                "Intelligence engine is unavailable. "
+                "Please check your backend data files."
             )
+
             return
 
-        with st.spinner("Building your learning intelligence..."):
+        with st.spinner(
+            "Analyzing your learning profile..."
+        ):
+
             run_engine_pipeline(profile)
 
         st.session_state.stage = "app"
+
         st.rerun()
 
     if st.button("← Back"):
+
         st.session_state.stage = "welcome"
+
         st.rerun()
 
 
-# ======================================================================
+# ==============================================================
 # NEXT BEST ACTION
-# ======================================================================
+# ==============================================================
 
 def render_next_best_action():
 
     st.markdown(
         """
         <div class="pp-eyebrow">
-            Decision Intelligence
+            DECISION ENGINE
         </div>
 
         <h2 class="pp-section-title">
-            Your next best action
+            Next Best Action
         </h2>
 
         <p class="pp-section-description">
-            The highest-value next step based on your current learning state.
+            The highest-value learning step for your current path.
         </p>
         """,
         unsafe_allow_html=True,
     )
-
-    st.write("")
 
     engine_output = (
         st.session_state.engine_output
@@ -1694,7 +2086,8 @@ def render_next_best_action():
         st.markdown(
             """
             <div class="pp-card">
-                No additional recommendation is available right now.
+                You're caught up — there is no additional
+                recommendation right now for your current goal.
             </div>
             """,
             unsafe_allow_html=True,
@@ -1702,16 +2095,34 @@ def render_next_best_action():
 
         return
 
-    reasons = nba.get("reasons", [])
+    reasons = nba.get(
+        "reasons",
+        [],
+    )
 
     reasons_html = ""
 
     for reason in reasons:
 
         reasons_html += f"""
-        <div class="pp-reason">
-            <span class="pp-reason-icon">✦</span>
-            <span>{reason}</span>
+        <div class="pp-insight-row">
+
+            <span class="pp-insight-check">
+                ✓
+            </span>
+
+            <span class="pp-insight-text">
+                {clean(reason)}
+            </span>
+
+        </div>
+        """
+
+    if not reasons_html:
+
+        reasons_html = """
+        <div class="pp-insight-text">
+            No additional reasoning was provided.
         </div>
         """
 
@@ -1719,23 +2130,23 @@ def render_next_best_action():
         f"""
         <div class="pp-nba-card">
 
-            <div class="pp-nba-label">
-                PathPilot Recommendation
+            <div class="pp-nba-eyebrow">
+                PathPilot Recommends
             </div>
 
             <div class="pp-nba-skill">
-                {nba.get("skill", "N/A")}
+                {clean(nba.get("skill", "N/A"))}
             </div>
 
             <div class="pp-nba-stats">
 
                 <div>
                     <div class="pp-nba-stat-label">
-                        Confidence
+                        Confidence Score
                     </div>
 
                     <div class="pp-nba-stat-value">
-                        {nba.get("score", "N/A")}
+                        {clean(nba.get("score", "N/A"))}
                     </div>
                 </div>
 
@@ -1745,7 +2156,7 @@ def render_next_best_action():
                     </div>
 
                     <div class="pp-nba-stat-value">
-                        {nba.get("est_hours", "N/A")} hrs
+                        {clean(nba.get("est_hours", "N/A"))} hrs
                     </div>
                 </div>
 
@@ -1755,16 +2166,16 @@ def render_next_best_action():
                     </div>
 
                     <div class="pp-nba-stat-value">
-                        {nba.get("difficulty", "N/A")}
+                        {clean(nba.get("difficulty", "N/A"))}
                     </div>
                 </div>
 
             </div>
 
-            <div class="pp-nba-reasons">
+            <div class="pp-nba-why">
 
                 <div class="pp-eyebrow">
-                    Why this matters
+                    Why this?
                 </div>
 
                 {reasons_html}
@@ -1776,48 +2187,141 @@ def render_next_best_action():
         unsafe_allow_html=True,
     )
 
-    st.write("")
+    breakdown = nba.get(
+        "score_breakdown",
+        {},
+    )
+
+    if breakdown:
+
+        st.write("")
+
+        st.markdown(
+            '<div class="pp-card">',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            '<div class="pp-eyebrow">SCORE BREAKDOWN</div>',
+            unsafe_allow_html=True,
+        )
+
+        rows_html = ""
+
+        for factor, value in breakdown.items():
+
+            try:
+                percentage = max(
+                    0,
+                    min(
+                        100,
+                        float(value),
+                    ),
+                )
+
+            except (
+                TypeError,
+                ValueError,
+            ):
+                percentage = 0
+
+            factor_name = (
+                str(factor)
+                .replace("_", " ")
+                .title()
+            )
+
+            rows_html += f"""
+            <div class="pp-score-row">
+
+                <div class="pp-score-top">
+
+                    <span class="pp-score-name">
+                        {clean(factor_name)}
+                    </span>
+
+                    <span class="pp-score-num">
+                        {clean(value)}
+                    </span>
+
+                </div>
+
+                <div class="pp-score-track">
+
+                    <div
+                        class="pp-score-fill"
+                        style="width:{percentage}%;">
+                    </div>
+
+                </div>
+
+            </div>
+            """
+
+        st.markdown(
+            rows_html,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True,
+        )
 
     render_adaptive_feedback(nba)
 
+
+# ==============================================================
+# ADAPTIVE FEEDBACK
+# ==============================================================
 
 def render_adaptive_feedback(nba):
 
     st.markdown(
         """
-        <div class="pp-question-label">
-            How does this recommendation feel?
-        </div>
+        <p style="
+            color:var(--text-muted);
+            font-size:0.86rem;
+            margin-top:1.5rem;
+        ">
+            How does this recommendation feel for you?
+        </p>
         """,
         unsafe_allow_html=True,
     )
 
     col1, col2, col3 = st.columns(3)
 
+    skill_name = nba.get("skill")
+
     feedback_clicked = None
 
     with col1:
+
         if st.button(
             "Too Easy",
             use_container_width=True,
         ):
+
             feedback_clicked = "too_easy"
 
     with col2:
+
         if st.button(
             "Appropriate",
             use_container_width=True,
         ):
+
             feedback_clicked = "appropriate"
 
     with col3:
+
         if st.button(
             "Too Difficult",
             use_container_width=True,
         ):
-            feedback_clicked = "too_difficult"
 
-    skill_name = nba.get("skill")
+            feedback_clicked = "too_difficult"
 
     if (
         feedback_clicked
@@ -1825,76 +2329,110 @@ def render_adaptive_feedback(nba):
         and skill_name
     ):
 
-        result = safe_call(
-            adaptive_engine.apply_feedback,
-            st.session_state.profile,
-            skill_name,
-            feedback_clicked,
-            st.session_state.adaptation_state,
-        )
+        with st.spinner(
+            "Adapting your learning path..."
+        ):
+
+            result = safe_call(
+                adaptive_engine.apply_feedback,
+                st.session_state.profile,
+                skill_name,
+                feedback_clicked,
+                st.session_state.adaptation_state,
+            )
 
         if result:
+
+            st.success(
+                "Your learning path has been adapted."
+            )
+
+            message = result.get(
+                "adaptation_message",
+                "",
+            )
+
+            if message:
+                st.info(message)
+
+            if result.get("root_blockers"):
+
+                blockers = ", ".join(
+                    result["root_blockers"]
+                )
+
+                st.warning(
+                    f"Root blockers identified: {blockers}"
+                )
 
             engine_output = (
                 st.session_state.engine_output
                 or {}
             )
 
-            if result.get("updated_recommendation") is not None:
-                engine_output["next_best_action"] = (
-                    result["updated_recommendation"]
-                )
+            if result.get(
+                "updated_recommendation"
+            ) is not None:
 
-            if result.get("updated_path_health") is not None:
-                engine_output["path_health"] = (
-                    result["updated_path_health"]
-                )
+                engine_output[
+                    "next_best_action"
+                ] = result[
+                    "updated_recommendation"
+                ]
 
-            if result.get("updated_risks") is not None:
-                engine_output["risks"] = (
-                    result["updated_risks"]
-                )
+            if result.get(
+                "updated_path_health"
+            ) is not None:
 
-            st.session_state.engine_output = engine_output
+                engine_output[
+                    "path_health"
+                ] = result[
+                    "updated_path_health"
+                ]
+
+            if result.get(
+                "updated_risks"
+            ) is not None:
+
+                engine_output[
+                    "risks"
+                ] = result[
+                    "updated_risks"
+                ]
+
+            st.session_state.engine_output = (
+                engine_output
+            )
 
             st.rerun()
 
 
-# ======================================================================
+# ==============================================================
 # AI ASSISTANT
-# ======================================================================
+# ==============================================================
 
 def render_ai_assistant():
 
-    profile = st.session_state.profile
-    engine_output = (
-        st.session_state.engine_output
-        or {}
-    )
-
     st.markdown(
         """
-        <div class="pp-assistant-header">
+        <div class="pp-eyebrow">
+            ASK PATHPILOT
+        </div>
 
-            <div class="pp-assistant-title-row">
+        <h2 class="pp-section-title">
+            Learning Intelligence
+        </h2>
 
-                <div class="pp-assistant-icon">
-                    ◈
-                </div>
+        <div class="pp-assistant-intro">
 
-                <div>
+            <div class="pp-assistant-title">
+                Your path, explained clearly.
+            </div>
 
-                    <div class="pp-assistant-title">
-                        PathPilot Intelligence
-                    </div>
-
-                    <div class="pp-assistant-subtitle">
-                        Ask questions about your roadmap, blockers,
-                        recommendations and progress.
-                    </div>
-
-                </div>
-
+            <div class="pp-assistant-subtitle">
+                Ask PathPilot why a skill is recommended,
+                what is blocking your progress, or whether
+                your learning path is on track.
             </div>
 
         </div>
@@ -1902,37 +2440,52 @@ def render_ai_assistant():
         unsafe_allow_html=True,
     )
 
+    profile = st.session_state.profile
+
+    engine_output = (
+        st.session_state.engine_output
+        or {}
+    )
+
+    if not assistant:
+
+        st.error(
+            "AI assistant unavailable."
+        )
+
+        return
+
+    question = st.text_input(
+        "Ask PathPilot",
+        placeholder=(
+            "Ask something about your learning journey..."
+        ),
+        label_visibility="collapsed",
+        key="assistant_question_input",
+    )
+
     st.markdown(
         """
-        <div class="pp-question-label">
-            Suggested questions
+        <div class="pp-eyebrow"
+             style="margin-top:1.2rem;">
+            SUGGESTED QUESTIONS
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     suggestions = [
-        (
-            "Why this skill?",
-            "Why should I learn this next?"
-        ),
-        (
-            "What's blocking me?",
-            "What is blocking my progress?"
-        ),
-        (
-            "Am I on track?",
-            "Am I on track for my learning goal?"
-        ),
-        (
-            "What should I focus on?",
-            "What should I focus on next?"
-        ),
+        "Why this skill?",
+        "What's blocking me?",
+        "Am I on track?",
+        "What should I focus on?",
     ]
 
     columns = st.columns(4)
 
-    for column, (label, question) in zip(
+    selected_question = None
+
+    for column, suggestion in zip(
         columns,
         suggestions,
     ):
@@ -1940,46 +2493,60 @@ def render_ai_assistant():
         with column:
 
             if st.button(
-                label,
-                key=f"assistant_{label}",
+                suggestion,
                 use_container_width=True,
+                key=f"assistant_{suggestion}",
             ):
 
-                st.session_state.assistant_question = question
+                mapping = {
+                    "Why this skill?":
+                        "Why should I learn this skill next?",
 
-    st.write("")
+                    "What's blocking me?":
+                        "What is blocking my progress?",
 
-    typed_question = st.text_input(
-        "Ask PathPilot",
-        value=st.session_state.assistant_question,
-        placeholder=(
-            "Ask anything about your learning path..."
-        ),
+                    "Am I on track?":
+                        "Am I on track with my learning goal?",
+
+                    "What should I focus on?":
+                        "What should I focus on next?",
+                }
+
+                selected_question = mapping[
+                    suggestion
+                ]
+
+    active_question = (
+        selected_question
+        or question
     )
 
-    if typed_question:
+    if active_question:
 
-        st.session_state.assistant_question = typed_question
-
-        with st.spinner("PathPilot is analyzing your learning context..."):
+        with st.spinner(
+            "PathPilot is analyzing your question..."
+        ):
 
             answer = safe_call(
                 assistant.answer_path_question,
                 profile,
                 engine_output,
-                typed_question,
+                active_question,
             )
 
         st.markdown(
             f"""
-            <div class="pp-answer-container">
+            <div class="pp-assistant-answer">
 
-                <div class="pp-answer-header">
-                    ◈ PathPilot Analysis
+                <div class="pp-answer-label">
+                    PathPilot Insight
                 </div>
 
-                <div class="pp-answer-content">
-                    {answer or "I couldn't generate an answer right now."}
+                <div class="pp-answer-text">
+                    {clean(
+                        answer
+                        or "I couldn't generate an answer right now."
+                    )}
                 </div>
 
             </div>
@@ -1988,11 +2555,29 @@ def render_ai_assistant():
         )
 
 
-# ======================================================================
+# ==============================================================
 # PATH HEALTH
-# ======================================================================
+# ==============================================================
 
 def render_path_health(engine_output):
+
+    st.markdown(
+        """
+        <div class="pp-eyebrow">
+            DIAGNOSTICS
+        </div>
+
+        <h2 class="pp-section-title">
+            Path Health
+        </h2>
+
+        <p class="pp-section-description">
+            Understand what is helping or slowing down
+            your learning journey.
+        </p>
+        """,
+        unsafe_allow_html=True,
+    )
 
     health = (
         engine_output.get("path_health")
@@ -2004,32 +2589,12 @@ def render_path_health(engine_output):
         or []
     )
 
-    st.markdown(
-        """
-        <div class="pp-eyebrow">
-            Learning Diagnostics
-        </div>
-
-        <h2 class="pp-section-title">
-            Path Health
-        </h2>
-
-        <p class="pp-section-description">
-            Understand what is helping — and what could slow down —
-            your learning journey.
-        </p>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    st.write("")
-
     if not health:
 
         st.markdown(
             """
             <div class="pp-card">
-                Path health data is unavailable.
+                Path health data is currently unavailable.
             </div>
             """,
             unsafe_allow_html=True,
@@ -2037,50 +2602,73 @@ def render_path_health(engine_output):
 
         return
 
-    status = health.get("status", "Unknown")
-    score = health.get("health_score", "—")
+    status = health.get(
+        "status",
+        "Unknown",
+    )
 
-    col1, col2 = st.columns([1, 1.5])
+    score = health.get(
+        "health_score",
+        0,
+    )
 
-    with col1:
+    try:
+        score_number = float(score)
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        score_number = 0
+
+    left, right = st.columns(
+        [1, 1.4]
+    )
+
+    with left:
 
         st.markdown(
             f"""
-            <div class="pp-health-summary">
+            <div class="pp-health-score-card">
 
                 <div class="pp-eyebrow">
-                    Current Path Status
+                    PATH HEALTH SCORE
                 </div>
 
-                <div style="
-                    font-family: var(--font-display);
-                    font-size: 2.2rem;
-                    font-weight: 800;
-                    margin-top: 0.5rem;
-                ">
-                    {score}
+                <div class="pp-metric-value"
+                     style="font-size:3rem;">
+                    {clean(score)}
                 </div>
 
-                <div style="
-                    color: var(--text-muted);
-                    margin-top: 0.2rem;
-                    font-size: 0.85rem;
-                ">
-                    {status}
-                </div>
+                <span class="pp-badge
+                    {status_badge_class(status)}">
+                    {clean(status)}
+                </span>
 
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with col2:
+        st.progress(
+            min(
+                max(
+                    score_number / 100,
+                    0,
+                ),
+                1,
+            )
+        )
+
+    with right:
 
         st.markdown(
             """
-            <div class="pp-eyebrow">
-                What's affecting your path
-            </div>
+            <div class="pp-card">
+
+                <div class="pp-eyebrow">
+                    WHAT'S AFFECTING YOUR PATH?
+                </div>
             """,
             unsafe_allow_html=True,
         )
@@ -2094,11 +2682,20 @@ def render_path_health(engine_output):
 
             for factor in factors:
 
+                text = clean(factor)
+
                 st.markdown(
                     f"""
-                    <div class="pp-reason">
-                        <span class="pp-reason-icon">✦</span>
-                        <span>{factor}</span>
+                    <div class="pp-insight-row">
+
+                        <span class="pp-insight-check">
+                            ✓
+                        </span>
+
+                        <span class="pp-insight-text">
+                            {text}
+                        </span>
+
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -2107,35 +2704,38 @@ def render_path_health(engine_output):
         else:
 
             st.markdown(
-                '<p class="pp-section-description">No major factors reported.</p>',
+                """
+                <p style="color:var(--text-muted);">
+                    No contributing factors reported.
+                </p>
+                """,
                 unsafe_allow_html=True,
             )
 
-    st.write("")
+        st.markdown(
+            "</div>",
+            unsafe_allow_html=True,
+        )
+
     st.write("")
 
     st.markdown(
         """
         <div class="pp-eyebrow">
-            Active Risks
+            DETECTED RISKS
         </div>
-
-        <h2 class="pp-section-title">
-            What needs attention
-        </h2>
         """,
         unsafe_allow_html=True,
     )
-
-    st.write("")
 
     if not risks:
 
         st.markdown(
             """
             <div class="pp-card">
-                No active risks detected. Your learning path currently
-                has no major blockers.
+                <div style="color:var(--success);">
+                    ✓ No active risks detected.
+                </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -2148,8 +2748,19 @@ def render_path_health(engine_output):
         if isinstance(risk, dict):
 
             severity = str(
-                risk.get("severity", "low")
+                risk.get(
+                    "severity",
+                    "low",
+                )
             ).lower()
+
+            severity_class = {
+                "high": "pp-risk-high",
+                "medium": "pp-risk-medium",
+            }.get(
+                severity,
+                "pp-risk-low",
+            )
 
             title = (
                 risk.get("title")
@@ -2167,56 +2778,36 @@ def render_path_health(engine_output):
                 or risk.get("action")
             )
 
-            severity_class = {
-                "high": "high",
-                "medium": "medium",
-            }.get(
-                severity,
-                "low",
-            )
+            action_html = ""
+
+            if action:
+
+                action_html = f"""
+                <div class="pp-risk-action">
+
+                    <b>Recommended action:</b>
+                    {clean(action)}
+
+                </div>
+                """
 
             st.markdown(
                 f"""
-                <div class="
-                    pp-risk-card
-                    pp-risk-card-{severity_class}
-                ">
+                <div class="pp-risk-card {severity_class}">
 
-                    <div class="pp-risk-top">
-
-                        <span class="
-                            pp-risk-severity
-                            pp-risk-severity-{severity_class}
-                        ">
-                            {severity} priority
-                        </span>
-
+                    <div class="pp-risk-severity">
+                        {clean(severity)} priority
                     </div>
 
                     <div class="pp-risk-title">
-                        {title}
+                        {clean(title)}
                     </div>
 
-                    <div class="pp-risk-message">
-                        {message}
+                    <div class="pp-risk-msg">
+                        {clean(message)}
                     </div>
 
-                    {
-                        f'''
-                        <div class="pp-risk-action">
-
-                            <div class="pp-risk-action-label">
-                                Recommended Action
-                            </div>
-
-                            <div style="margin-top: 0.3rem;">
-                                {action}
-                            </div>
-
-                        </div>
-                        '''
-                        if action else ""
-                    }
+                    {action_html}
 
                 </div>
                 """,
@@ -2227,44 +2818,45 @@ def render_path_health(engine_output):
 
             st.markdown(
                 f"""
-                <div class="pp-risk-card pp-risk-card-low">
-                    <div class="pp-risk-message">
-                        {risk}
-                    </div>
+                <div class="pp-risk-card">
+                    {clean(risk)}
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
 
 
-# ======================================================================
-# MAIN APP
-# ======================================================================
+# ==============================================================
+# MAIN APPLICATION
+# ==============================================================
 
 def render_app():
 
     profile = st.session_state.profile
-    engine_output = st.session_state.engine_output
 
-    if profile is None or engine_output is None:
+    engine_output = (
+        st.session_state.engine_output
+    )
+
+    if (
+        profile is None
+        or engine_output is None
+    ):
 
         st.warning(
-            "No learner profile found."
+            "No learner profile found. "
+            "Please build your path first."
         )
 
-        if st.button("Build My Path"):
+        if st.button(
+            "← Go to Profiling"
+        ):
+
             st.session_state.stage = "profiling"
+
             st.rerun()
 
         return
-
-    nav_options = [
-        "Overview",
-        "Next Action",
-        "Learning Roadmap",
-        "Path Health",
-        "AI Assistant",
-    ]
 
     with st.sidebar:
 
@@ -2283,17 +2875,28 @@ def render_app():
             </div>
 
             <div class="pp-brand-sub">
-                Learning Intelligence
+                AI Learning Intelligence
             </div>
             """,
             unsafe_allow_html=True,
         )
 
+        nav_options = [
+            "Overview",
+            "Next Action",
+            "Learning Roadmap",
+            "Path Health",
+            "AI Assistant",
+        ]
+
         current_index = (
             nav_options.index(
                 st.session_state.nav_section
             )
-            if st.session_state.nav_section in nav_options
+
+            if st.session_state.nav_section
+            in nav_options
+
             else 0
         )
 
@@ -2311,11 +2914,23 @@ def render_app():
             <div class="pp-user-card">
 
                 <div class="pp-user-name">
-                    {getattr(profile, "name", "Learner")}
+                    {clean(
+                        getattr(
+                            profile,
+                            "name",
+                            "Learner",
+                        )
+                    )}
                 </div>
 
                 <div class="pp-user-role">
-                    {getattr(profile, "career_goal", "Learning Path")}
+                    {clean(
+                        getattr(
+                            profile,
+                            "career_goal",
+                            "N/A",
+                        )
+                    )}
                 </div>
 
             </div>
@@ -2336,7 +2951,6 @@ def render_app():
                 "engine_output",
                 "adaptation_state",
                 "roadmap_progress",
-                "assistant_question",
             ]:
 
                 st.session_state.pop(
@@ -2345,6 +2959,7 @@ def render_app():
                 )
 
             init_session_state()
+
             st.rerun()
 
     health = (
@@ -2352,16 +2967,14 @@ def render_app():
         or {}
     )
 
-    status = health.get("status", "Unknown")
-    score = health.get("health_score", "—")
+    status = health.get(
+        "status",
+        "Unknown",
+    )
 
-    status_dot_color = {
-        "Healthy": "#4ADE80",
-        "At Risk": "#FBBF24",
-        "Critical": "#FB7185",
-    }.get(
-        status,
-        "#7C6CFF",
+    score = health.get(
+        "health_score",
+        "—",
     )
 
     st.markdown(
@@ -2370,41 +2983,39 @@ def render_app():
 
             <div>
 
-                <div class="pp-eyebrow">
-                    Personal Learning Workspace
-                </div>
-
-                <h1>
+                <h1 class="pp-page-title">
                     Good to see you,
-                    {getattr(profile, "name", "there")} 👋
+                    {clean(
+                        getattr(
+                            profile,
+                            "name",
+                            "there",
+                        )
+                    )} 👋
                 </h1>
 
-                <p>
-                    Your learning path is continuously evaluated against
-                    your skills, career goal, timeline and progress.
-                </p>
+                <div class="pp-page-subtitle">
+
+                    Your learning path is continuously analyzed
+                    based on your skills, goals, timeline and
+                    progress.
+
+                </div>
 
             </div>
 
-            <div class="pp-status-card">
+            <div class="pp-status-chip">
 
                 <div class="pp-status-label">
-
-                    <span
-                        class="pp-status-dot"
-                        style="background:{status_dot_color};"
-                    ></span>
-
                     Path Status
-
                 </div>
 
                 <div class="pp-status-value">
-                    {status}
+                    {clean(status)}
                 </div>
 
                 <div class="pp-status-score">
-                    {score} / 100
+                    {clean(score)} / 100
                 </div>
 
             </div>
@@ -2446,9 +3057,9 @@ def render_app():
         render_ai_assistant()
 
 
-# ======================================================================
+# ==============================================================
 # ROUTER
-# ======================================================================
+# ==============================================================
 
 stage = st.session_state.stage
 
