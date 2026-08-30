@@ -1,558 +1,288 @@
-import html
+"""
+PathPilot AI — Learning roadmap rendering.
+Reads only from engine_output["roadmap"] and writes to
+st.session_state.roadmap_progress. No backend calls here.
+"""
+
 import streamlit as st
 
 
-# ==========================================================
-# HELPERS
-# ==========================================================
+STATUS_OPTIONS = ["Not Started", "In Progress", "Completed"]
 
-def safe_text(value, fallback="—"):
-
-    if value is None:
-        return fallback
-
-    value = str(value).strip()
-
-    if not value:
-        return fallback
-
-    return html.escape(value)
+STATUS_META = {
+    "Not Started": {"icon": "○", "label": "Not Started", "node_class": "", "accent": "var(--text-faint)"},
+    "In Progress": {"icon": "◐", "label": "In Progress", "node_class": "pp-node-inprogress", "accent": "var(--accent)"},
+    "Completed":   {"icon": "✓", "label": "Completed",   "node_class": "pp-node-completed", "accent": "var(--success)"},
+}
 
 
-def difficulty_label(value):
+def render_roadmap(profile, engine_output, safe_call):
+    _inject_roadmap_styles()
 
-    if value is None:
-        return "Personalized"
+    roadmap = engine_output.get("roadmap") or []
 
-    value = str(value)
+    total = len(roadmap)
+    progress = st.session_state.get("roadmap_progress", {})
+    completed = sum(1 for s in roadmap if isinstance(s, dict) and progress.get(s.get("skill"), "Not Started") == "Completed")
+    current_skill = None
+    for s in roadmap:
+        if isinstance(s, dict) and progress.get(s.get("skill"), "Not Started") != "Completed":
+            current_skill = s.get("skill")
+            break
 
-    mapping = {
-        "1": "Beginner",
-        "2": "Foundation",
-        "3": "Intermediate",
-        "4": "Advanced",
-        "5": "Expert",
-    }
-
-    return mapping.get(
-        value,
-        value.capitalize(),
+    st.markdown('<div class="pp-eyebrow">YOUR JOURNEY</div>', unsafe_allow_html=True)
+    st.markdown('<h2 class="pp-section-title" style="margin-bottom:0.3rem;">Learning Roadmap</h2>', unsafe_allow_html=True)
+    st.markdown(
+        '<p style="color:var(--text-muted); font-size:0.89rem; margin-top:0; margin-bottom:1.3rem;">'
+        'A structured path from your current skills to your goal.</p>',
+        unsafe_allow_html=True,
     )
 
+    if not roadmap:
+        st.markdown(
+            '<div class="pp-card">No roadmap has been generated yet. Try adjusting your profile or career goal.</div>',
+            unsafe_allow_html=True,
+        )
+        return
 
-# ==========================================================
-# ROADMAP
-# ==========================================================
+    if "roadmap_progress" not in st.session_state:
+        st.session_state.roadmap_progress = {}
 
-def render_roadmap(profile, engine_output):
+    _render_summary_strip(total, completed, current_skill)
+    st.write("")
 
-    engine_output = engine_output or {}
+    for idx, step in enumerate(roadmap, start=1):
+        _render_stage(idx, step, is_last=(idx == total))
 
-    nba = engine_output.get(
-        "next_best_action"
-    ) or {}
 
-    health = engine_output.get(
-        "path_health"
-    ) or {}
-
-    current_skills = getattr(
-        profile,
-        "current_skills",
-        [],
-    ) or []
-
-    # ======================================================
-    # HEADER
-    # ======================================================
+# ----------------------------------------------------------------------
+# Summary strip
+# ----------------------------------------------------------------------
+def _render_summary_strip(total, completed, current_skill):
+    pct = int(round((completed / total) * 100)) if total else 0
+    current_label = current_skill if current_skill else "Path complete"
 
     st.markdown(
         f"""
-        <div style="margin-bottom:2rem;">
-
-            <div class="pp-eyebrow">
-                PERSONALIZED ROADMAP
+        <div class="pp-roadmap-summary">
+            <div class="pp-roadmap-summary-item">
+                <div class="pp-roadmap-summary-value">{total}</div>
+                <div class="pp-roadmap-summary-label">Total Stages</div>
             </div>
-
-            <div class="pp-section-title">
-                Your path toward {safe_text(profile.career_goal)}
+            <div class="pp-roadmap-summary-divider"></div>
+            <div class="pp-roadmap-summary-item">
+                <div class="pp-roadmap-summary-value" style="color:var(--success);">{completed}</div>
+                <div class="pp-roadmap-summary-label">Completed</div>
             </div>
-
-            <div class="pp-section-subtitle">
-                A structured view of what you've built,
-                where you are now, and what comes next.
+            <div class="pp-roadmap-summary-divider"></div>
+            <div class="pp-roadmap-summary-item">
+                <div class="pp-roadmap-summary-value" style="color:var(--accent);">{pct}%</div>
+                <div class="pp-roadmap-summary-label">Progress</div>
             </div>
-
+            <div class="pp-roadmap-summary-divider"></div>
+            <div class="pp-roadmap-summary-item" style="flex:1.6;">
+                <div class="pp-roadmap-summary-value" style="font-size:1.02rem; font-family:var(--font-display);">{current_label}</div>
+                <div class="pp-roadmap-summary-label">Current Stage</div>
+            </div>
         </div>
+        <div class="pp-roadmap-track"><div class="pp-roadmap-track-fill" style="width:{pct}%;"></div></div>
         """,
         unsafe_allow_html=True,
     )
 
 
-    # ======================================================
-    # ROADMAP OVERVIEW
-    # ======================================================
+# ----------------------------------------------------------------------
+# Stage
+# ----------------------------------------------------------------------
+def _render_stage(idx, step, is_last):
+    if not isinstance(step, dict):
+        st.markdown(f'<div class="pp-card">Stage {idx}: {step}</div>', unsafe_allow_html=True)
+        return
 
-    timeline = getattr(
-        profile,
-        "timeline_weeks",
-        None,
-    )
+    skill = step.get("skill", "Unknown Skill")
+    priority = step.get("priority", "N/A")
+    difficulty = step.get("difficulty", "N/A")
+    prerequisites = step.get("prerequisites", []) or []
+    resources = step.get("resources", []) or step.get("recommended_resources", []) or []
 
-    weekly_hours = getattr(
-        profile,
-        "weekly_hours",
-        None,
-    )
+    progress = st.session_state.roadmap_progress
+    current_status = progress.get(skill, "Not Started")
+    meta = STATUS_META.get(current_status, STATUS_META["Not Started"])
 
-    health_score = health.get(
-        "health_score",
-        "—",
-    )
+    is_current = current_status == "In Progress"
+    is_completed = current_status == "Completed"
+    is_upcoming = current_status == "Not Started"
 
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-
-        st.markdown(
-            f"""
-            <div class="pp-card">
-                <div class="pp-card-label">
-                    Timeline
-                </div>
-
-                <div class="pp-card-value">
-                    {safe_text(timeline)}
-                </div>
-
-                <div style="color:#a1a1aa;">
-                    weeks available
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col2:
-
-        st.markdown(
-            f"""
-            <div class="pp-card">
-                <div class="pp-card-label">
-                    Weekly Capacity
-                </div>
-
-                <div class="pp-card-value">
-                    {safe_text(weekly_hours)}h
-                </div>
-
-                <div style="color:#a1a1aa;">
-                    learning time
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    with col3:
-
-        st.markdown(
-            f"""
-            <div class="pp-card">
-                <div class="pp-card-label">
-                    Path Health
-                </div>
-
-                <div class="pp-card-value">
-                    {safe_text(health_score)}
-                </div>
-
-                <div style="color:#a1a1aa;">
-                    current readiness
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
-
-    # ======================================================
-    # ROADMAP TIMELINE
-    # ======================================================
-
-    st.markdown(
-        """
-        <div class="pp-section-title">
-            Learning journey
-        </div>
-
-        <div class="pp-section-subtitle">
-            Your roadmap is organized around your current
-            capability and highest-value next step.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-    # ======================================================
-    # STEP 1 — CURRENT FOUNDATION
-    # ======================================================
-
-    if current_skills:
-
-        skills_html = "".join(
-            f"""
-            <span style="
-                display:inline-block;
-                margin:0.25rem;
-                padding:0.4rem 0.7rem;
-                border-radius:999px;
-                background:rgba(52,211,153,0.10);
-                border:1px solid rgba(52,211,153,0.2);
-                color:#86efac;
-                font-size:0.82rem;
-            ">
-                ✓ {safe_text(skill)}
-            </span>
-            """
-            for skill in current_skills
-        )
-
-        current_text = skills_html
-
+    if is_current:
+        stage_class = "pp-stage pp-stage-current"
+    elif is_completed:
+        stage_class = "pp-stage pp-stage-done"
     else:
+        stage_class = "pp-stage pp-stage-upcoming"
 
-        current_text = """
-        <div style="color:#71717a;">
-            No skills have been added yet.
-            PathPilot will build recommendations from your profile.
-        </div>
-        """
+    rail_col, body_col = st.columns([0.06, 0.94])
 
-    st.markdown(
-        f"""
-        <div class="pp-roadmap-step completed">
-
-            <div style="
-                color:#34d399;
-                font-size:0.75rem;
-                font-weight:800;
-                letter-spacing:0.1em;
-            ">
-                STEP 01 · CURRENT FOUNDATION
-            </div>
-
-            <div style="
-                font-size:1.25rem;
-                font-weight:700;
-                margin:0.5rem 0 0.9rem;
-            ">
-                What you already know
-            </div>
-
-            <div>
-                {current_text}
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-    # ======================================================
-    # STEP 2 — NEXT BEST ACTION
-    # ======================================================
-
-    if nba:
-
-        skill = nba.get(
-            "skill",
-            "Next learning step",
-        )
-
-        reasons = nba.get(
-            "reasons",
-            [],
-        ) or []
-
-        est_hours = nba.get("est_hours")
-        difficulty = difficulty_label(
-            nba.get("difficulty")
-        )
-
-        reasons_html = ""
-
-        if reasons:
-
-            reasons_html = "".join(
-                f"""
-                <div style="
-                    margin-top:0.5rem;
-                    color:#a1a1aa;
-                ">
-                    • {safe_text(reason)}
-                </div>
-                """
-                for reason in reasons[:4]
-            )
-
-        else:
-
-            reasons_html = """
-            <div style="
-                margin-top:0.5rem;
-                color:#a1a1aa;
-            ">
-                Selected based on your personalized
-                career direction and current readiness.
-            </div>
-            """
-
+    with rail_col:
+        line_html = "" if is_last else '<div class="pp-rail-line"></div>'
         st.markdown(
             f"""
-            <div class="pp-roadmap-step active">
-
-                <div style="
-                    color:#c4b5fd;
-                    font-size:0.75rem;
-                    font-weight:800;
-                    letter-spacing:0.1em;
-                ">
-                    STEP 02 · CURRENT FOCUS
-                </div>
-
-                <div style="
-                    font-size:1.4rem;
-                    font-weight:750;
-                    margin:0.5rem 0;
-                ">
-                    {safe_text(skill)}
-                </div>
-
-                <div style="
-                    display:flex;
-                    gap:0.6rem;
-                    flex-wrap:wrap;
-                    margin:0.7rem 0;
-                ">
-
-                    <span style="
-                        padding:0.35rem 0.65rem;
-                        border-radius:999px;
-                        background:rgba(139,92,246,0.14);
-                        color:#c4b5fd;
-                        font-size:0.78rem;
-                    ">
-                        {safe_text(difficulty)}
-                    </span>
-
-                    <span style="
-                        padding:0.35rem 0.65rem;
-                        border-radius:999px;
-                        background:rgba(255,255,255,0.06);
-                        color:#d4d4d8;
-                        font-size:0.78rem;
-                    ">
-                        {safe_text(est_hours, "Flexible")} hours
-                    </span>
-
-                </div>
-
-                <div style="margin-top:1rem;">
-                    {reasons_html}
-                </div>
-
+            <div class="pp-rail">
+                <div class="pp-rail-node {meta['node_class']}">{meta['icon']}</div>
+                {line_html}
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    else:
+    with body_col:
+        st.markdown(f'<div class="{stage_class}">', unsafe_allow_html=True)
 
-        st.markdown(
-            """
-            <div class="pp-roadmap-step active">
-
-                <div style="
-                    color:#c4b5fd;
-                    font-size:0.75rem;
-                    font-weight:800;
-                ">
-                    CURRENT FOCUS
-                </div>
-
-                <div style="
-                    font-size:1.2rem;
-                    font-weight:700;
-                    margin-top:0.5rem;
-                ">
-                    Your next step is being evaluated
-                </div>
-
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-
-    # ======================================================
-    # STEP 3 — FUTURE PROGRESSION
-    # ======================================================
-
-    st.markdown(
-        f"""
-        <div class="pp-roadmap-step">
-
-            <div style="
-                color:#71717a;
-                font-size:0.75rem;
-                font-weight:800;
-                letter-spacing:0.1em;
-            ">
-                STEP 03 · FUTURE PROGRESSION
-            </div>
-
-            <div style="
-                font-size:1.25rem;
-                font-weight:700;
-                margin:0.5rem 0;
-            ">
-                Build toward {safe_text(profile.career_goal)}
-            </div>
-
-            <div style="
-                color:#a1a1aa;
-                line-height:1.7;
-            ">
-                Future recommendations will be recalculated as you
-                progress. PathPilot adapts your next best action
-                instead of locking you into a rigid static course list.
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-    # ======================================================
-    # PATH HEALTH
-    # ======================================================
-
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
-    st.markdown(
-        """
-        <div class="pp-section-title">
-            Roadmap health
-        </div>
-
-        <div class="pp-section-subtitle">
-            Signals influencing how sustainable your current path is.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-    factors = health.get(
-        "contributing_factors",
-        [],
-    ) or []
-
-    status = health.get(
-        "status",
-        "Unknown",
-    )
-
-    score = health.get(
-        "health_score",
-        "—",
-    )
-
-    left, right = st.columns([0.75, 1.25])
-
-    with left:
-
+        here_tag = '<span class="pp-here-tag">YOU ARE HERE</span>' if is_current else ""
         st.markdown(
             f"""
-            <div class="pp-health">
-
-                <div class="pp-card-label">
-                    CURRENT STATUS
-                </div>
-
-                <div class="pp-health-score">
-                    {safe_text(score)}
-                </div>
-
-                <div style="
-                    color:#c4b5fd;
-                    font-weight:700;
-                ">
-                    {safe_text(status)}
-                </div>
-
+            <div class="pp-stage-top">
+                <span class="pp-stage-index">STAGE {idx:02d}</span>
+                <span class="pp-badge-soft" style="border-color:{meta['accent']}44; color:{meta['accent']};">{meta['label']}</span>
+                {here_tag}
+            </div>
+            <div class="pp-stage-title">{skill}</div>
+            <div class="pp-stage-tags">
+                <span class="pp-tag">{difficulty}</span>
+                <span class="pp-tag">Priority {priority}</span>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with right:
-
-        if factors:
-
-            for factor in factors:
-
-                st.markdown(
-                    f"""
-                    <div class="pp-card"
-                        style="margin-bottom:0.7rem;">
-
-                        <div style="
-                            color:#d4d4d8;
-                            font-size:0.92rem;
-                        ">
-                            {safe_text(factor)}
-                        </div>
-
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-        else:
-
+        if prerequisites:
+            prereq_chips = "".join(f'<span class="pp-chip pp-chip-prereq">{p}</span>' for p in prerequisites)
             st.markdown(
-                """
-                <div class="pp-card">
-
-                    <div style="
-                        color:#a1a1aa;
-                    ">
-                        No additional path health factors are
-                        currently available.
-
-                    </div>
-
-                </div>
-                """,
+                f'<div class="pp-stage-block"><div class="pp-stage-block-label">Prerequisites</div>'
+                f'<div>{prereq_chips}</div></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.markdown(
+                '<div class="pp-stage-block"><div class="pp-stage-block-label">Prerequisites</div>'
+                '<div class="pp-insight-text" style="font-size:0.82rem;">None — ready to start</div></div>',
                 unsafe_allow_html=True,
             )
 
+        if resources:
+            chips = ""
+            for r in resources[:4]:
+                if isinstance(r, dict):
+                    title = r.get("title") or r.get("name") or "Resource"
+                    url = r.get("url") or r.get("link")
+                    chips += (
+                        f'<a href="{url}" target="_blank" style="text-decoration:none;">'
+                        f'<span class="pp-chip">{title} ↗</span></a>'
+                        if url else f'<span class="pp-chip">{title}</span>'
+                    )
+                else:
+                    chips += f'<span class="pp-chip">{r}</span>'
+            st.markdown(
+                f'<div class="pp-stage-block"><div class="pp-stage-block-label">Resources</div><div>{chips}</div></div>',
+                unsafe_allow_html=True,
+            )
 
-    # ======================================================
-    # ACTION
-    # ======================================================
+        with st.expander("Update status", expanded=False):
+            new_status = st.radio(
+                "Status",
+                STATUS_OPTIONS,
+                index=STATUS_OPTIONS.index(current_status),
+                key=f"status_{skill}_{idx}",
+                horizontal=True,
+                label_visibility="collapsed",
+            )
+            if new_status != current_status:
+                st.session_state.roadmap_progress[skill] = new_status
+                st.rerun()
 
-    st.markdown("<br>", unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)  # close pp-stage
+        st.markdown('<div style="height:0.3rem;"></div>', unsafe_allow_html=True)
 
-    if st.button(
-        "← Back to Dashboard",
-    ):
-        st.session_state.page = "Dashboard"
-        st.rerun()
+
+# ----------------------------------------------------------------------
+# Scoped styles
+# ----------------------------------------------------------------------
+def _inject_roadmap_styles():
+    st.markdown(
+        """
+        <style>
+        .pp-roadmap-summary {
+            display: flex; align-items: center; gap: 0;
+            background: var(--surface-raised); border: 1px solid var(--border);
+            border-radius: var(--radius-md) var(--radius-md) 0 0;
+            padding: 1.1rem 1.4rem;
+        }
+        .pp-roadmap-summary-item { flex: 1; }
+        .pp-roadmap-summary-value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 600; color: var(--text-primary); }
+        .pp-roadmap-summary-label { color: var(--text-faint); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+        .pp-roadmap-summary-divider { width: 1px; height: 30px; background: var(--border); margin: 0 1.2rem; }
+        .pp-roadmap-track { height: 3px; background: var(--surface-elevated); border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; margin-bottom: 1.4rem; border: 1px solid var(--border); border-top: none; }
+        .pp-roadmap-track-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+
+        .pp-rail { display: flex; flex-direction: column; align-items: center; }
+        .pp-rail-node {
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700;
+            border: 2px solid var(--text-faint); color: var(--text-faint);
+            background: var(--bg); flex-shrink: 0;
+        }
+        .pp-node-inprogress {
+            border-color: var(--accent); color: var(--accent);
+            background: var(--accent-soft);
+        }
+        .pp-node-completed {
+            border-color: var(--success); color: var(--success);
+            background: var(--success-soft);
+        }
+        .pp-rail-line {
+            width: 2px; flex: 1; min-height: 30px; margin: 6px 0;
+            background: var(--border-strong);
+        }
+
+        .pp-stage {
+            background: var(--surface-raised);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: 1.15rem 1.35rem;
+            margin-bottom: 0.95rem;
+        }
+        .pp-stage-current {
+            border-color: var(--accent-dim);
+            background: var(--surface-elevated);
+        }
+        .pp-stage-done { opacity: 0.82; }
+        .pp-stage-upcoming { opacity: 0.68; }
+
+        .pp-stage-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+        .pp-stage-index { font-family: var(--font-mono); color: var(--text-faint); font-size: 0.72rem; letter-spacing: 0.06em; }
+        .pp-badge-soft {
+            font-family: var(--font-mono); font-size: 0.66rem; font-weight: 600;
+            padding: 0.18rem 0.6rem; border-radius: 999px; border: 1px solid;
+        }
+        .pp-here-tag {
+            font-family: var(--font-mono); font-size: 0.64rem; font-weight: 700;
+            color: var(--bg); background: var(--accent);
+            padding: 0.18rem 0.55rem; border-radius: 999px; letter-spacing: 0.05em;
+        }
+        .pp-stage-title { font-family: var(--font-display); font-size: 1.12rem; font-weight: 700; margin-bottom: 6px; }
+        .pp-stage-tags { margin-bottom: 0.85rem; }
+        .pp-tag {
+            display: inline-block; font-size: 0.73rem; color: var(--text-muted);
+            background: var(--surface-elevated); border: 1px solid var(--border);
+            border-radius: 6px; padding: 0.17rem 0.5rem; margin-right: 6px;
+        }
+        .pp-stage-block { margin-bottom: 0.65rem; }
+        .pp-stage-block-label {
+            font-size: 0.69rem; text-transform: uppercase; letter-spacing: 0.08em;
+            color: var(--text-faint); margin-bottom: 0.35rem; font-weight: 600;
+        }
+        .pp-chip-prereq { border-color: rgba(124,127,242,0.25); color: var(--text-secondary); }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
