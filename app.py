@@ -1,6 +1,5 @@
 import json
 import html
-from textwrap import dedent
 
 import streamlit as st
 
@@ -8,13 +7,14 @@ from core.profiler import LearnerProfile
 from core.intelligence_engine import IntelligenceEngine
 from core.adaptive_engine import AdaptiveEngine, AdaptationState
 from core.ai_assistant import AIAssistant
+
 from ui.dashboard import render_dashboard
 from ui.roadmap import render_roadmap
 
 
-# ============================================================
+# =========================================================
 # PAGE CONFIG
-# ============================================================
+# =========================================================
 
 st.set_page_config(
     page_title="PathPilot AI",
@@ -24,381 +24,384 @@ st.set_page_config(
 )
 
 
-# ============================================================
-# GLOBAL DESIGN SYSTEM
-# ============================================================
+# =========================================================
+# GLOBAL UI / CSS
+# =========================================================
 
 st.markdown(
-    dedent("""
-    <style>
+    """
+<style>
 
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
 
-    :root {
-        --bg: #F6F7FB;
-        --surface: #FFFFFF;
-        --surface-soft: #FAFBFF;
-        --text: #172033;
-        --muted: #6B7280;
-        --line: #E7EAF1;
+:root {
+    --bg: #F7F8FC;
+    --surface: #FFFFFF;
+    --text: #1E293B;
+    --muted: #718096;
+    --border: #E5E7EF;
+    --primary: #5B5CE2;
+    --primary-dark: #494ACB;
+    --primary-soft: #F0F0FF;
+    --success: #20A36A;
+}
 
-        --primary: #5B5CE2;
-        --primary-dark: #4849C8;
-        --primary-soft: #F0F0FF;
 
-        --green: #16A36A;
-        --green-soft: #EAF9F1;
+/* ---------------------------------------------------------
+   GLOBAL
+--------------------------------------------------------- */
 
-        --orange: #E38B24;
-        --orange-soft: #FFF5E8;
+html,
+body,
+[class*="css"] {
+    font-family: 'DM Sans', sans-serif;
+}
 
-        --red: #E25555;
-        --red-soft: #FFF0F0;
-    }
+.stApp {
+    background:
+        radial-gradient(
+            circle at 50% -20%,
+            rgba(91, 92, 226, 0.08),
+            transparent 35%
+        ),
+        #F7F8FC;
+    color: #1E293B;
+}
 
-    html,
-    body,
-    [class*="css"] {
-        font-family: 'DM Sans', sans-serif;
-    }
+#MainMenu {
+    visibility: hidden;
+}
 
-    .stApp {
-        background:
-            radial-gradient(circle at 85% 5%, rgba(115, 110, 255, 0.08), transparent 25%),
-            radial-gradient(circle at 5% 25%, rgba(100, 160, 255, 0.05), transparent 22%),
-            #F6F7FB;
-        color: var(--text);
-    }
+footer {
+    visibility: hidden;
+}
 
-    #MainMenu,
-    footer,
-    header {
-        visibility: hidden;
-    }
+header {
+    visibility: hidden;
+}
+
+
+/* ---------------------------------------------------------
+   MAIN LAYOUT
+--------------------------------------------------------- */
+
+.block-container {
+    max-width: 1240px;
+    padding-top: 2.5rem;
+    padding-bottom: 4rem;
+}
+
+
+/* ---------------------------------------------------------
+   HEADINGS
+--------------------------------------------------------- */
+
+h1, h2, h3 {
+    font-family: 'Manrope', sans-serif !important;
+    color: #1E293B !important;
+    letter-spacing: -0.035em;
+}
+
+
+/* ---------------------------------------------------------
+   SIDEBAR
+--------------------------------------------------------- */
+
+section[data-testid="stSidebar"] {
+    background: #171925;
+    border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+section[data-testid="stSidebar"] > div {
+    padding-top: 1.5rem;
+}
+
+section[data-testid="stSidebar"] .stMarkdown,
+section[data-testid="stSidebar"] p,
+section[data-testid="stSidebar"] span,
+section[data-testid="stSidebar"] label {
+    color: #E9EBF5 !important;
+}
+
+
+/* Sidebar radio */
+
+section[data-testid="stSidebar"] div[role="radiogroup"] {
+    gap: 4px;
+}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] label {
+    padding: 10px 12px;
+    border-radius: 10px;
+    transition: all 0.2s ease;
+}
+
+section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+    background: rgba(255,255,255,0.08);
+    transform: translateX(3px);
+}
+
+
+/* ---------------------------------------------------------
+   INPUTS
+--------------------------------------------------------- */
+
+div[data-testid="stTextInput"] input,
+div[data-testid="stTextArea"] textarea,
+div[data-testid="stNumberInput"] input {
+
+    background: #FFFFFF !important;
+
+    color: #1E293B !important;
+
+    border: 1px solid #DDE1EA !important;
+
+    border-radius: 12px !important;
+
+    box-shadow: none !important;
+
+    transition:
+        border 0.2s ease,
+        box-shadow 0.2s ease,
+        transform 0.2s ease;
+}
+
+
+/* Placeholder */
+
+div[data-testid="stTextInput"] input::placeholder,
+div[data-testid="stTextArea"] textarea::placeholder {
+
+    color: #A7AFBE !important;
+
+    opacity: 1 !important;
+}
+
+
+/* Focus */
+
+div[data-testid="stTextInput"] input:focus,
+div[data-testid="stTextArea"] textarea:focus,
+div[data-testid="stNumberInput"] input:focus {
+
+    border-color: #5B5CE2 !important;
+
+    box-shadow:
+        0 0 0 4px rgba(91,92,226,0.10) !important;
+}
+
+
+/* Textarea */
+
+div[data-testid="stTextArea"] textarea {
+    min-height: 120px !important;
+}
+
+
+/* ---------------------------------------------------------
+   SELECT BOX
+--------------------------------------------------------- */
+
+div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+
+    background: #FFFFFF !important;
+
+    color: #1E293B !important;
+
+    border-color: #DDE1EA !important;
+
+    border-radius: 12px !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   BUTTONS
+--------------------------------------------------------- */
+
+.stButton > button,
+.stFormSubmitButton > button {
+
+    min-height: 46px;
+
+    border-radius: 12px;
+
+    font-family: 'DM Sans', sans-serif !important;
+
+    font-weight: 700 !important;
+
+    border: 1px solid #E1E4EC;
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+}
+
+
+.stButton > button:hover,
+.stFormSubmitButton > button:hover {
+
+    transform: translateY(-2px);
+
+    box-shadow:
+        0 12px 30px rgba(31,41,55,0.12);
+
+    border-color: #B9BAF5;
+}
+
+
+/* Primary button */
+
+.stButton > button[kind="primary"],
+.stFormSubmitButton > button[kind="primary"] {
+
+    background:
+        linear-gradient(
+            135deg,
+            #5455D7,
+            #6C6DE8
+        ) !important;
+
+    color: white !important;
+
+    border: none !important;
+
+    box-shadow:
+        0 10px 24px rgba(91,92,226,0.20);
+}
+
+
+.stButton > button[kind="primary"]:hover,
+.stFormSubmitButton > button[kind="primary"]:hover {
+
+    box-shadow:
+        0 16px 34px rgba(91,92,226,0.28);
+}
+
+
+/* ---------------------------------------------------------
+   CARDS
+--------------------------------------------------------- */
+
+div[data-testid="stVerticalBlockBorderWrapper"] {
+
+    background: rgba(255,255,255,0.92);
+
+    border: 1px solid #E5E7EF;
+
+    border-radius: 20px;
+
+    box-shadow:
+        0 8px 28px rgba(31,41,55,0.04);
+
+    transition:
+        transform 0.22s ease,
+        box-shadow 0.22s ease,
+        border-color 0.22s ease;
+}
+
+
+div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+
+    border-color: #D6D8EE;
+
+    box-shadow:
+        0 16px 36px rgba(31,41,55,0.07);
+}
+
+
+/* ---------------------------------------------------------
+   METRICS
+--------------------------------------------------------- */
+
+div[data-testid="stMetric"] {
+
+    background: #FFFFFF;
+
+    border: 1px solid #E5E7EF;
+
+    border-radius: 16px;
+
+    padding: 16px;
+
+}
+
+
+/* ---------------------------------------------------------
+   EXPANDERS
+--------------------------------------------------------- */
+
+details {
+
+    background: #FFFFFF !important;
+
+    border: 1px solid #E5E7EF !important;
+
+    border-radius: 14px !important;
+
+}
+
+
+/* ---------------------------------------------------------
+   PROGRESS
+--------------------------------------------------------- */
+
+div[data-testid="stProgress"] > div > div {
+    background-color: #5B5CE2 !important;
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+--------------------------------------------------------- */
+
+@media (max-width: 768px) {
 
     .block-container {
-        max-width: 1250px;
-        padding-top: 2.2rem;
-        padding-bottom: 4rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        padding-top: 1.5rem;
     }
 
-    h1, h2, h3 {
-        font-family: 'Manrope', sans-serif !important;
-        color: var(--text) !important;
-        letter-spacing: -0.035em;
-    }
+}
 
-    /* ========================================================
-       SIDEBAR
-    ======================================================== */
-
-    section[data-testid="stSidebar"] {
-        background:
-            linear-gradient(180deg, #151827 0%, #10131F 100%);
-        border-right: 1px solid rgba(255,255,255,0.06);
-    }
-
-    section[data-testid="stSidebar"] * {
-        color: #F6F7FB;
-    }
-
-    section[data-testid="stSidebar"] .stRadio label {
-        border-radius: 12px;
-        padding: 10px 12px;
-        margin-bottom: 4px;
-        transition: all 0.2s ease;
-    }
-
-    section[data-testid="stSidebar"] .stRadio label:hover {
-        background: rgba(255,255,255,0.08);
-        transform: translateX(3px);
-    }
-
-    section[data-testid="stSidebar"] .stButton button {
-        background: rgba(255,255,255,0.07) !important;
-        border: 1px solid rgba(255,255,255,0.10) !important;
-        color: white !important;
-    }
-
-    section[data-testid="stSidebar"] .stButton button:hover {
-        background: rgba(255,255,255,0.12) !important;
-    }
-
-    /* ========================================================
-       BUTTONS
-    ======================================================== */
-
-    .stButton > button,
-    .stFormSubmitButton > button {
-
-        min-height: 46px !important;
-
-        border-radius: 13px !important;
-
-        border: 1px solid #E2E6EF !important;
-
-        font-family: 'DM Sans', sans-serif !important;
-
-        font-weight: 700 !important;
-
-        transition:
-            transform 0.18s ease,
-            box-shadow 0.18s ease,
-            border-color 0.18s ease !important;
-    }
-
-    .stButton > button:hover,
-    .stFormSubmitButton > button:hover {
-
-        transform: translateY(-2px);
-
-        box-shadow: 0 12px 28px rgba(30,40,80,0.12);
-
-        border-color: #C6C7FF !important;
-    }
-
-    .stButton > button[kind="primary"],
-    .stFormSubmitButton > button {
-
-        background:
-            linear-gradient(135deg, #5556D8, #7472E9) !important;
-
-        border: none !important;
-
-        color: white !important;
-
-        box-shadow: 0 10px 24px rgba(91,92,226,0.22);
-    }
-
-    /* ========================================================
-       INPUTS
-    ======================================================== */
-
-    .stTextInput input,
-    .stTextArea textarea,
-    .stNumberInput input {
-
-        background: #FFFFFF !important;
-
-        color: #172033 !important;
-
-        border: 1px solid #DDE2EB !important;
-
-        border-radius: 13px !important;
-
-        transition:
-            border-color 0.2s ease,
-            box-shadow 0.2s ease !important;
-    }
-
-    .stTextInput input:focus,
-    .stTextArea textarea:focus,
-    .stNumberInput input:focus {
-
-        border-color: #7778EA !important;
-
-        box-shadow:
-            0 0 0 4px rgba(91,92,226,0.10) !important;
-    }
-
-    .stSelectbox div[data-baseweb="select"] > div {
-
-        background: #FFFFFF !important;
-
-        border-radius: 13px !important;
-
-        border-color: #DDE2EB !important;
-    }
-
-    /* ========================================================
-       CARDS
-    ======================================================== */
-
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-
-        background: rgba(255,255,255,0.94);
-
-        border: 1px solid #E6EAF1 !important;
-
-        border-radius: 20px !important;
-
-        box-shadow:
-            0 8px 28px rgba(25,35,65,0.045);
-
-        transition:
-            transform 0.2s ease,
-            box-shadow 0.2s ease,
-            border-color 0.2s ease;
-    }
-
-    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-
-        border-color: #D5D9F0 !important;
-
-        box-shadow:
-            0 14px 34px rgba(30,40,75,0.075);
-    }
-
-    /* ========================================================
-       METRICS
-    ======================================================== */
-
-    div[data-testid="stMetric"] {
-
-        background: #FFFFFF;
-
-        border: 1px solid #E7EAF1;
-
-        border-radius: 18px;
-
-        padding: 18px;
-
-        box-shadow: 0 6px 20px rgba(25,35,65,0.04);
-    }
-
-    /* ========================================================
-       EXPANDERS
-    ======================================================== */
-
-    details {
-
-        background: #FFFFFF !important;
-
-        border: 1px solid #E5E8EF !important;
-
-        border-radius: 15px !important;
-
-        margin-bottom: 10px;
-    }
-
-    /* ========================================================
-       PROGRESS
-    ======================================================== */
-
-    div[data-testid="stProgress"] > div > div {
-
-        background: linear-gradient(
-            90deg,
-            #5B5CE2,
-            #8987FF
-        ) !important;
-    }
-
-    /* ========================================================
-       MOBILE
-    ======================================================== */
-
-    @media (max-width: 760px) {
-
-        .block-container {
-            padding: 1.2rem 1rem 3rem 1rem;
-        }
-
-    }
-
-    </style>
-    """),
+</style>
+""",
     unsafe_allow_html=True,
 )
 
 
-# ============================================================
+# =========================================================
 # HELPERS
-# ============================================================
+# =========================================================
 
 def esc(value):
-    return html.escape(str(value if value is not None else "—"))
+    """Safely escape dynamic text used inside HTML."""
+    if value is None:
+        return "—"
+    return html.escape(str(value))
 
-
-def render_html(content):
-    st.markdown(
-        dedent(content).strip(),
-        unsafe_allow_html=True,
-    )
-
-
-def hero(eyebrow, title, subtitle):
-
-    render_html(f"""
-    <div style="margin-bottom:30px;">
-
-        <div style="
-            display:inline-flex;
-            align-items:center;
-            padding:6px 11px;
-            border-radius:999px;
-            background:#F0F0FF;
-            color:#5B5CE2;
-            font-size:10px;
-            font-weight:800;
-            letter-spacing:.11em;
-            text-transform:uppercase;
-            margin-bottom:12px;
-        ">
-            ✦ {esc(eyebrow)}
-        </div>
-
-        <div style="
-            font-family:Manrope,sans-serif;
-            font-size:clamp(32px,4vw,48px);
-            font-weight:800;
-            letter-spacing:-.05em;
-            line-height:1.08;
-            color:#172033;
-        ">
-            {title}
-        </div>
-
-        <div style="
-            max-width:720px;
-            margin-top:11px;
-            font-size:15px;
-            line-height:1.75;
-            color:#6B7280;
-        ">
-            {esc(subtitle)}
-        </div>
-
-    </div>
-    """)
-
-
-# ============================================================
-# SESSION STATE
-# ============================================================
 
 def init_state():
 
     defaults = {
-
         "stage": "welcome",
-
         "profile": None,
-
         "engine_output": None,
-
         "adaptation_state": AdaptationState(),
-
         "roadmap_progress": {},
-
         "nav_section": "Overview",
-
         "assistant_question": "",
-
     }
 
     for key, value in defaults.items():
-
         if key not in st.session_state:
             st.session_state[key] = value
 
 
 init_state()
 
-
-# ============================================================
-# ENGINE INITIALIZATION
-# ============================================================
 
 @st.cache_resource
 def get_engine():
@@ -410,31 +413,26 @@ def get_assistant():
     return AIAssistant()
 
 
-def safe_call(fn, *args):
+def safe_call(fn, *args, **kwargs):
 
     try:
         if fn:
-            return fn(*args)
-
+            return fn(*args, **kwargs)
     except Exception:
         return None
 
     return None
 
 
-# ============================================================
+# =========================================================
 # CAREER OPTIONS
-# ============================================================
+# =========================================================
 
 def career_options():
 
     try:
 
-        with open(
-            "data/career_paths.json",
-            encoding="utf-8"
-        ) as file:
-
+        with open("data/career_paths.json", encoding="utf-8") as file:
             data = json.load(file)
 
         if isinstance(data, dict):
@@ -442,212 +440,168 @@ def career_options():
 
         if isinstance(data, list):
 
-            results = []
+            options = []
 
             for item in data:
 
                 if isinstance(item, dict):
 
-                    name = (
+                    value = (
                         item.get("career_goal")
                         or item.get("name")
-                        or item.get("title")
                     )
 
-                    if name:
-                        results.append(name)
+                    if value:
+                        options.append(value)
 
-            if results:
-                return results
+            if options:
+                return options
 
     except Exception:
         pass
 
+
     return [
 
         "Machine Learning Engineer",
+
         "Data Scientist",
+
         "AI Engineer",
+
         "Full Stack Web Developer",
+
         "Cybersecurity Analyst",
 
     ]
 
 
-# ============================================================
-# INTELLIGENCE PIPELINE
-# ============================================================
+# =========================================================
+# PIPELINE
+# =========================================================
 
 def run_pipeline(profile, engine):
 
     output = {
 
-        "skill_gap":
-            safe_call(
-                getattr(engine, "analyze_skill_gap", None),
-                profile
-            ),
+        "skill_gap": safe_call(
+            getattr(engine, "analyze_skill_gap", None),
+            profile,
+        ),
 
-        "readiness":
-            safe_call(
-                getattr(engine, "calculate_readiness_score", None),
-                profile
-            ),
+        "readiness": safe_call(
+            getattr(engine, "calculate_readiness_score", None),
+            profile,
+        ),
 
-        "next_best_action":
-            safe_call(
-                getattr(engine, "calculate_next_best_action", None),
-                profile
-            ),
+        "next_best_action": safe_call(
+            getattr(engine, "calculate_next_best_action", None),
+            profile,
+        ),
 
-        "risks":
-            safe_call(
-                getattr(engine, "detect_risks", None),
-                profile
-            ) or [],
+        "risks": safe_call(
+            getattr(engine, "detect_risks", None),
+            profile,
+        ) or [],
 
-        "path_health":
-            safe_call(
-                getattr(engine, "calculate_path_health", None),
-                profile
-            ) or {},
+        "path_health": safe_call(
+            getattr(engine, "calculate_path_health", None),
+            profile,
+        ) or {},
 
-        "roadmap":
-            safe_call(
-                getattr(engine, "generate_roadmap", None),
-                profile
-            ) or [],
+        "roadmap": safe_call(
+            getattr(engine, "generate_roadmap", None),
+            profile,
+        ) or [],
 
     }
 
     st.session_state.engine_output = output
 
 
-# ============================================================
-# BRAND
-# ============================================================
-
-def brand():
-
-    render_html("""
-    <div style="
-        display:flex;
-        align-items:center;
-        gap:11px;
-        margin-bottom:6px;
-    ">
-
-        <div style="
-            width:40px;
-            height:40px;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            border-radius:13px;
-            background:linear-gradient(135deg,#7778F0,#4F50CC);
-            color:white;
-            font-size:20px;
-            font-weight:800;
-            box-shadow:0 10px 24px rgba(90,91,220,.35);
-        ">
-            ✦
-        </div>
-
-        <div style="
-            font-family:Manrope,sans-serif;
-            font-size:21px;
-            font-weight:800;
-            letter-spacing:-.04em;
-            color:#FFFFFF;
-        ">
-            PathPilot
-        </div>
-
-    </div>
-
-    <div style="
-        margin-left:51px;
-        margin-bottom:30px;
-        color:#9DA7BA;
-        font-size:11px;
-    ">
-        Learning intelligence workspace
-    </div>
-    """)
-
-
-# ============================================================
-# WELCOME PAGE — KEEPING YOUR ORIGINAL CONCEPT
-# ============================================================
+# =========================================================
+# WELCOME PAGE
+# =========================================================
 
 def welcome():
 
-    render_html("""
+    # IMPORTANT:
+    # This is ONE complete HTML block rendered with
+    # unsafe_allow_html=True.
+    # It will NOT appear as raw <div> code.
+
+    hero = """
+<div style="
+    text-align:center;
+    padding:42px 10px 34px;
+">
+
     <div style="
-        text-align:center;
-        padding:55px 10px 35px;
+        display:inline-flex;
+        align-items:center;
+        padding:7px 14px;
+        border-radius:999px;
+        background:#F0F0FF;
+        border:1px solid #DDDDF8;
+        color:#5B5CE2;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:.12em;
+        text-transform:uppercase;
     ">
-
-        <div style="
-            display:inline-flex;
-            align-items:center;
-            padding:7px 14px;
-            border-radius:999px;
-            background:#F0F0FF;
-            border:1px solid #DDDDF8;
-            color:#5B5CE2;
-            font-size:10px;
-            font-weight:800;
-            letter-spacing:.12em;
-            text-transform:uppercase;
-        ">
-            ✦ Personalized Learning Intelligence
-        </div>
-
-        <div style="
-            font-family:Manrope,sans-serif;
-            font-size:clamp(48px,6.5vw,76px);
-            font-weight:800;
-            letter-spacing:-.065em;
-            line-height:1.03;
-            color:#172033;
-            margin-top:24px;
-        ">
-            Stop guessing.
-            <br>
-            <span style="color:#5B5CE2;">
-                Start learning with direction.
-            </span>
-        </div>
-
-        <div style="
-            max-width:720px;
-            margin:20px auto 0;
-            color:#687184;
-            font-size:16px;
-            line-height:1.75;
-        ">
-            PathPilot turns your goals, skills, constraints and learning
-            patterns into an explainable learning path you can actually follow.
-        </div>
-
+        ✦ Personalized Learning Intelligence
     </div>
-    """)
 
-    _, center, _ = st.columns([1, 1.25, 1])
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:clamp(48px,6.5vw,76px);
+        font-weight:800;
+        letter-spacing:-.065em;
+        line-height:1.03;
+        color:#172033;
+        margin-top:24px;
+    ">
+        Stop guessing.
+        <br>
+        <span style="color:#5B5CE2;">
+            Start learning with direction.
+        </span>
+    </div>
 
-    with center:
+    <div style="
+        max-width:720px;
+        margin:20px auto 0;
+        color:#687184;
+        font-size:16px;
+        line-height:1.75;
+    ">
+        PathPilot turns your goals, skills, constraints and learning
+        patterns into an explainable learning path you can actually follow.
+    </div>
+
+</div>
+"""
+
+    st.markdown(hero, unsafe_allow_html=True)
+
+    _, middle, _ = st.columns([1, 1.35, 1])
+
+    with middle:
 
         start = st.button(
-            "Build My Learning Path  →",
+            "Build My Learning Path →",
             type="primary",
             use_container_width=True,
         )
 
-    st.write("")
-    st.write("")
+
+    st.markdown("<div style='height:36px'></div>", unsafe_allow_html=True)
+
+
+    # FOUR FEATURE COLUMNS
 
     columns = st.columns(4)
+
 
     steps = [
 
@@ -677,6 +631,7 @@ def welcome():
 
     ]
 
+
     for column, step in zip(columns, steps):
 
         number, title, description = step
@@ -684,25 +639,47 @@ def welcome():
         with column:
 
             st.markdown(
-                f"<div style='font-size:10px;font-weight:700;"
-                f"letter-spacing:.08em;color:#8B93A4;margin-bottom:12px;'>"
-                f"{number}</div>",
+                f"""
+<div style="
+    padding:18px 6px;
+    min-height:145px;
+">
+
+    <div style="
+        font-size:10px;
+        letter-spacing:.08em;
+        font-weight:700;
+        color:#8A92A3;
+        margin-bottom:20px;
+    ">
+        {number}
+    </div>
+
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:25px;
+        font-weight:700;
+        letter-spacing:-.04em;
+        color:#1E293B;
+        margin-bottom:14px;
+    ">
+        {title}
+    </div>
+
+    <div style="
+        font-size:14px;
+        line-height:1.65;
+        color:#687184;
+        max-width:240px;
+    ">
+        {description}
+    </div>
+
+</div>
+""",
                 unsafe_allow_html=True,
             )
 
-            st.markdown(
-                f"<div style='font-family:Manrope,sans-serif;"
-                f"font-size:24px;font-weight:800;letter-spacing:-.04em;"
-                f"color:#172033;margin-bottom:10px;'>"
-                f"{title}</div>",
-                unsafe_allow_html=True,
-            )
-
-            st.markdown(
-                f"<div style='font-size:14px;line-height:1.7;"
-                f"color:#687184;'>{description}</div>",
-                unsafe_allow_html=True,
-            )
 
     if start:
 
@@ -711,167 +688,248 @@ def welcome():
         st.rerun()
 
 
-# ============================================================
-# PROFILING PAGE — COMPLETELY REDESIGNED
-# ============================================================
+# =========================================================
+# PROFILING PAGE
+# =========================================================
 
 def profiling(engine):
 
-    hero(
-        "Build your learner profile",
-        "Let's understand where you're starting from.",
-        "Tell PathPilot about your goal, current skills and available time. "
-        "We'll use that information to build a learning path around you.",
+    st.markdown(
+        """
+<div style="
+    max-width:780px;
+    margin:0 auto 30px;
+">
+
+    <div style="
+        color:#5B5CE2;
+        font-size:11px;
+        font-weight:800;
+        letter-spacing:.11em;
+        text-transform:uppercase;
+        margin-bottom:10px;
+    ">
+        Getting Started
+    </div>
+
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:42px;
+        font-weight:800;
+        letter-spacing:-.05em;
+        color:#1E293B;
+        line-height:1.1;
+    ">
+        Let's map your starting point.
+    </div>
+
+    <div style="
+        margin-top:12px;
+        color:#718096;
+        font-size:16px;
+        line-height:1.7;
+    ">
+        Tell PathPilot where you are today and where you want to go.
+        We'll build a learning path around your actual goals.
+    </div>
+
+</div>
+""",
+        unsafe_allow_html=True,
     )
+
 
     with st.form("profile_form"):
 
-        # ----------------------------------------------------
-        # STEP 1
-        # ----------------------------------------------------
+
+        # -------------------------------------------------
+        # SECTION 1
+        # -------------------------------------------------
 
         with st.container(border=True):
 
             st.markdown("### 01 · Your destination")
 
             st.caption(
-                "Start with where you want your learning journey to take you."
+                "Where do you want this learning journey to take you?"
             )
 
-            st.write("")
 
-            left, right = st.columns(2)
+            name = st.text_input(
 
-            with left:
+                "Your name",
 
-                name = st.text_input(
-                    "Your name",
-                    placeholder="e.g. Akshaya Reddy",
-                )
+                placeholder="e.g. Akshaya Reddy",
 
-            with right:
+            )
 
-                goal = st.selectbox(
-                    "Career goal",
-                    career_options(),
-                )
 
-            natural_goal = st.text_area(
+            goal = st.selectbox(
+
+                "Career goal",
+
+                career_options(),
+
+            )
+
+
+            natural = st.text_area(
+
                 "Describe your goal in your own words",
+
                 placeholder=(
-                    "Example: I want to become a Machine Learning Engineer, "
-                    "build strong projects and prepare for internships."
+                    "Example: I want to become a Machine Learning "
+                    "Engineer, build strong projects and prepare for "
+                    "internship opportunities."
                 ),
-                height=120,
+
             )
 
-        st.write("")
 
-        # ----------------------------------------------------
-        # STEP 2
-        # ----------------------------------------------------
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+
+        # -------------------------------------------------
+        # SECTION 2
+        # -------------------------------------------------
 
         with st.container(border=True):
 
             st.markdown("### 02 · Your current position")
 
             st.caption(
-                "Help PathPilot understand what you already know."
+                "Tell PathPilot what you already know and what interests you."
             )
 
-            st.write("")
 
             level = st.select_slider(
+
                 "Experience level",
+
                 options=[
                     "Beginner",
                     "Intermediate",
                     "Advanced",
                 ],
+
                 value="Beginner",
+
             )
 
-            left, right = st.columns(2)
 
-            with left:
+            skills = st.text_input(
 
-                skills = st.text_input(
-                    "Current skills",
-                    placeholder="e.g. Python, SQL, Git",
-                )
+                "Current skills",
 
-            with right:
+                placeholder="e.g. Python, SQL, Git, NumPy",
 
-                interests = st.text_input(
-                    "Areas you're interested in",
-                    placeholder="e.g. AI, Data Science, Computer Vision",
-                )
+            )
 
-        st.write("")
 
-        # ----------------------------------------------------
-        # STEP 3
-        # ----------------------------------------------------
+            interests = st.text_input(
+
+                "Interests",
+
+                placeholder=(
+                    "e.g. Artificial Intelligence, Data Science, "
+                    "Computer Vision"
+                ),
+
+            )
+
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+
+        # -------------------------------------------------
+        # SECTION 3
+        # -------------------------------------------------
 
         with st.container(border=True):
 
             st.markdown("### 03 · Your learning reality")
 
             st.caption(
-                "A realistic learning path should fit your actual schedule."
+                "A useful learning path should fit your real schedule."
             )
 
-            st.write("")
 
-            col1, col2, col3 = st.columns(3)
+            left, right = st.columns(2)
 
-            with col1:
+
+            with left:
 
                 hours = st.number_input(
-                    "Hours per week",
+
+                    "Hours available each week",
+
                     min_value=1,
+
                     max_value=80,
+
                     value=10,
+
                 )
 
-            with col2:
+
+            with right:
 
                 weeks = st.number_input(
+
                     "Target timeline (weeks)",
+
                     min_value=1,
+
                     max_value=104,
+
                     value=24,
+
                 )
 
-            with col3:
 
-                style = st.selectbox(
-                    "Preferred learning style",
-                    [
-                        "Mixed",
-                        "Hands-on",
-                        "Visual",
-                        "Video",
-                        "Reading",
-                    ],
-                )
+            style = st.selectbox(
 
-        st.write("")
+                "Preferred learning style",
 
-        submit = st.form_submit_button(
-            "Generate My Personalized Learning Path  →",
-            type="primary",
-            use_container_width=True,
-        )
+                [
+                    "Visual",
+                    "Hands-on",
+                    "Reading",
+                    "Video",
+                    "Mixed",
+                ],
+
+            )
+
+
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+
+            submit = st.form_submit_button(
+
+                "Generate My Personalized Learning Path →",
+
+                type="primary",
+
+                use_container_width=True,
+
+            )
+
+
+    # =====================================================
+    # FORM SUBMISSION
+    # =====================================================
 
     if not submit:
         return
 
+
     if not name.strip():
 
-        st.error("Please enter your name before generating your path.")
+        st.error("Please enter your name before continuing.")
 
         return
+
 
     try:
 
@@ -881,24 +939,28 @@ def profiling(engine):
 
             career_goal=goal,
 
-            natural_language_goal=natural_goal.strip(),
+            natural_language_goal=natural.strip(),
 
             experience_level={
+
                 "Beginner": 1,
+
                 "Intermediate": 3,
+
                 "Advanced": 5,
+
             }[level],
 
             current_skills=[
-                item.strip()
-                for item in skills.split(",")
-                if item.strip()
+                skill.strip()
+                for skill in skills.split(",")
+                if skill.strip()
             ],
 
             interests=[
-                item.strip()
-                for item in interests.split(",")
-                if item.strip()
+                interest.strip()
+                for interest in interests.split(",")
+                if interest.strip()
             ],
 
             completed_courses=[],
@@ -911,28 +973,32 @@ def profiling(engine):
 
         )
 
+
         st.session_state.profile = profile
 
+
         with st.spinner(
-            "PathPilot is analyzing your skills, goals and learning opportunities..."
+            "PathPilot is analyzing your profile and building your path..."
         ):
 
             run_pipeline(profile, engine)
+
 
         st.session_state.stage = "app"
 
         st.rerun()
 
+
     except Exception as exc:
 
         st.error(
-            f"Something went wrong while generating your learning path: {exc}"
+            f"Could not generate your learning path: {exc}"
         )
 
 
-# ============================================================
+# =========================================================
 # NEXT BEST ACTION
-# ============================================================
+# =========================================================
 
 def next_action(engine, adaptive_engine, assistant):
 
@@ -940,264 +1006,173 @@ def next_action(engine, adaptive_engine, assistant):
 
     nba = output.get("next_best_action")
 
-    hero(
-        "Decision engine",
-        "Your next best action.",
-        "Instead of overwhelming you with options, PathPilot identifies "
-        "the most valuable next move.",
+
+    st.markdown(
+        """
+<div style="margin-bottom:28px;">
+
+    <div style="
+        color:#5B5CE2;
+        font-size:11px;
+        font-weight:800;
+        letter-spacing:.1em;
+        text-transform:uppercase;
+    ">
+        Decision Engine
+    </div>
+
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:42px;
+        font-weight:800;
+        letter-spacing:-.05em;
+        margin-top:8px;
+    ">
+        Your next best action.
+    </div>
+
+    <div style="
+        color:#718096;
+        margin-top:10px;
+        font-size:16px;
+    ">
+        One focused recommendation based on your learning profile.
+    </div>
+
+</div>
+""",
+        unsafe_allow_html=True,
     )
+
 
     if not isinstance(nba, dict):
 
-        st.info("Your next recommendation is not available yet.")
+        st.info("No recommendation is available yet.")
 
         return
 
-    skill = nba.get("skill", "Your next learning step")
 
-    score = nba.get("score", "—")
+    skill = esc(nba.get("skill", "Your next step"))
 
-    hours = nba.get("est_hours", "—")
+    score = esc(nba.get("score", "—"))
 
-    difficulty = nba.get("difficulty", "—")
+    hours = esc(nba.get("est_hours", "—"))
 
-    render_html(f"""
+    difficulty = esc(nba.get("difficulty", "—"))
+
+
+    st.markdown(
+        f"""
+<div style="
+    background:linear-gradient(135deg,#5455D7,#7778E8);
+    border-radius:24px;
+    padding:34px;
+    color:white;
+    box-shadow:0 20px 45px rgba(84,85,215,.20);
+">
+
     <div style="
-        background:linear-gradient(135deg,#5556D8,#7776EC);
-        border-radius:24px;
-        padding:34px;
-        color:white;
-        box-shadow:0 20px 50px rgba(85,86,216,.22);
-        margin-bottom:24px;
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:.12em;
+        opacity:.75;
+    ">
+        PATHPILOT'S DECISION
+    </div>
+
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:42px;
+        font-weight:800;
+        letter-spacing:-.045em;
+        margin-top:10px;
+    ">
+        {skill}
+    </div>
+
+    <div style="
+        display:flex;
+        flex-wrap:wrap;
+        gap:12px;
+        margin-top:24px;
     ">
 
         <div style="
-            font-size:10px;
-            font-weight:800;
-            letter-spacing:.12em;
-            opacity:.75;
+            background:rgba(255,255,255,.12);
+            border:1px solid rgba(255,255,255,.15);
+            border-radius:14px;
+            padding:12px 16px;
         ">
-            PATHPILOT RECOMMENDS
+            <div style="font-size:10px;opacity:.7;">CONFIDENCE</div>
+            <div style="font-weight:700;margin-top:4px;">{score}</div>
         </div>
 
         <div style="
-            font-family:Manrope,sans-serif;
-            font-size:clamp(30px,4vw,46px);
-            font-weight:800;
-            letter-spacing:-.04em;
-            margin-top:8px;
+            background:rgba(255,255,255,.12);
+            border:1px solid rgba(255,255,255,.15);
+            border-radius:14px;
+            padding:12px 16px;
         ">
-            {esc(skill)}
+            <div style="font-size:10px;opacity:.7;">ESTIMATED EFFORT</div>
+            <div style="font-weight:700;margin-top:4px;">{hours} hrs</div>
         </div>
 
         <div style="
-            display:flex;
-            flex-wrap:wrap;
-            gap:12px;
-            margin-top:24px;
+            background:rgba(255,255,255,.12);
+            border:1px solid rgba(255,255,255,.15);
+            border-radius:14px;
+            padding:12px 16px;
         ">
-
-            <div style="
-                padding:12px 16px;
-                border-radius:14px;
-                background:rgba(255,255,255,.13);
-                border:1px solid rgba(255,255,255,.16);
-            ">
-                <div style="font-size:9px;opacity:.7;">CONFIDENCE</div>
-                <div style="font-weight:800;margin-top:4px;">
-                    {esc(score)}
-                </div>
-            </div>
-
-            <div style="
-                padding:12px 16px;
-                border-radius:14px;
-                background:rgba(255,255,255,.13);
-                border:1px solid rgba(255,255,255,.16);
-            ">
-                <div style="font-size:9px;opacity:.7;">ESTIMATED EFFORT</div>
-                <div style="font-weight:800;margin-top:4px;">
-                    {esc(hours)} hrs
-                </div>
-            </div>
-
-            <div style="
-                padding:12px 16px;
-                border-radius:14px;
-                background:rgba(255,255,255,.13);
-                border:1px solid rgba(255,255,255,.16);
-            ">
-                <div style="font-size:9px;opacity:.7;">DIFFICULTY</div>
-                <div style="font-weight:800;margin-top:4px;">
-                    {esc(difficulty)}
-                </div>
-            </div>
-
+            <div style="font-size:10px;opacity:.7;">DIFFICULTY</div>
+            <div style="font-weight:700;margin-top:4px;">{difficulty}</div>
         </div>
 
     </div>
-    """)
 
-    reasons = nba.get("reasons", [])
+</div>
+""",
+        unsafe_allow_html=True,
+    )
+
+
+    reasons = nba.get("reasons") or []
+
 
     if not isinstance(reasons, list):
         reasons = [reasons]
 
-    left, right = st.columns([1.25, 0.75])
 
-    with left:
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
 
-        with st.container(border=True):
-
-            st.markdown("### Why this, why now?")
-
-            if reasons:
-
-                for reason in reasons:
-
-                    st.markdown(f"✓ {esc(reason)}")
-
-            else:
-
-                st.write(
-                    "This recommendation was selected based on your "
-                    "profile, skill gaps and learning path."
-                )
-
-    with right:
-
-        with st.container(border=True):
-
-            st.markdown("### Decision signals")
-
-            breakdown = nba.get("score_breakdown", {})
-
-            if isinstance(breakdown, dict):
-
-                for key, value in breakdown.items():
-
-                    st.caption(
-                        str(key).replace("_", " ").title()
-                    )
-
-                    try:
-                        progress = float(value) / 100
-                    except Exception:
-                        progress = 0
-
-                    progress = max(0, min(progress, 1))
-
-                    st.progress(progress)
-
-            else:
-
-                st.caption(
-                    "Detailed decision signals are unavailable."
-                )
-
-    st.write("")
 
     with st.container(border=True):
 
-        st.markdown("### Does this recommendation feel right?")
+        st.markdown("### Why this recommendation?")
 
         st.caption(
-            "Your feedback helps the adaptive engine improve future recommendations."
+            "These are the learning signals that influenced the decision."
         )
 
-        col1, col2, col3 = st.columns(3)
 
-        choice = None
+        if reasons:
 
-        with col1:
+            for reason in reasons:
 
-            if st.button(
-                "Too easy",
-                use_container_width=True,
-            ):
-                choice = "too_easy"
-
-        with col2:
-
-            if st.button(
-                "Feels right",
-                type="primary",
-                use_container_width=True,
-            ):
-                choice = "appropriate"
-
-        with col3:
-
-            if st.button(
-                "Too difficult",
-                use_container_width=True,
-            ):
-                choice = "too_difficult"
-
-    if choice and adaptive_engine:
-
-        result = safe_call(
-            getattr(adaptive_engine, "apply_feedback", None),
-            st.session_state.profile,
-            nba.get("skill"),
-            choice,
-            st.session_state.adaptation_state,
-        )
-
-        if isinstance(result, dict):
-
-            if result.get("updated_recommendation"):
-
-                output["next_best_action"] = (
-                    result["updated_recommendation"]
+                st.markdown(
+                    f"✓ &nbsp; {esc(reason)}",
+                    unsafe_allow_html=True,
                 )
 
-            if result.get("updated_path_health"):
-
-                output["path_health"] = (
-                    result["updated_path_health"]
-                )
-
-            if result.get("updated_risks"):
-
-                output["risks"] = (
-                    result["updated_risks"]
-                )
-
-            st.session_state.engine_output = output
-
-            st.success(
-                result.get(
-                    "adaptation_message",
-                    "Your learning path has been updated."
-                )
-            )
-
-            st.rerun()
-
-    if assistant:
-
-        with st.expander("Why did PathPilot choose this?"):
-
-            answer = safe_call(
-                getattr(
-                    assistant,
-                    "explain_next_best_action",
-                    None
-                ),
-                st.session_state.profile,
-                nba,
-            )
+        else:
 
             st.write(
-                answer
-                or "An explanation is currently unavailable."
+                "This step was selected based on your learning profile."
             )
 
 
-# ============================================================
+# =========================================================
 # PATH HEALTH
-# ============================================================
+# =========================================================
 
 def health_page():
 
@@ -1207,26 +1182,21 @@ def health_page():
 
     risks = output.get("risks") or []
 
-    hero(
-        "Learning diagnostics",
-        "How healthy is your learning path?",
-        "PathPilot evaluates whether your current roadmap is realistic, "
-        "sustainable and aligned with your goals.",
+
+    st.markdown("## Path health")
+
+    st.caption(
+        "Understand how sustainable and realistic your learning path is."
     )
 
-    score = (
-        health.get("health_score", "—")
-        if isinstance(health, dict)
-        else "—"
-    )
 
-    status = (
-        health.get("status", "Unknown")
-        if isinstance(health, dict)
-        else "Unknown"
-    )
+    score = health.get("health_score", "—")
 
-    left, right = st.columns([0.7, 1.3])
+    status = health.get("status", "Unknown")
+
+
+    left, right = st.columns([1, 2])
+
 
     with left:
 
@@ -1235,49 +1205,50 @@ def health_page():
             st.caption("OVERALL PATH HEALTH")
 
             st.markdown(
-                f"<div style='font-family:Manrope,sans-serif;"
-                f"font-size:58px;font-weight:800;color:#5B5CE2;'>"
-                f"{esc(score)}</div>",
-                unsafe_allow_html=True,
+                f"## {esc(score)} / 100"
             )
 
-            st.markdown(f"### {esc(status)}")
+            st.markdown(
+                f"**{esc(status)}**"
+            )
+
 
     with right:
 
         with st.container(border=True):
 
-            st.markdown("### What is influencing your path?")
+            st.markdown("### What influences your path?")
 
-            factors = (
-                health.get("contributing_factors", [])
-                if isinstance(health, dict)
-                else []
+            factors = health.get(
+                "contributing_factors",
+                [],
             )
+
 
             if factors:
 
                 for factor in factors:
-                    st.markdown(f"✓ {esc(factor)}")
+
+                    st.markdown(
+                        f"✓ {esc(factor)}"
+                    )
 
             else:
 
-                st.write(
-                    "Your profile, skill gaps, available time and learning "
-                    "progress are used to evaluate path health."
+                st.caption(
+                    "No additional path factors available."
                 )
 
-    st.write("")
 
-    st.markdown("### Active risks")
+    st.markdown("### Detected risks")
+
 
     if not risks:
 
-        st.success(
-            "No major risks are currently affecting your learning path."
-        )
+        st.success("No major learning risks detected.")
 
         return
+
 
     for risk in risks:
 
@@ -1285,9 +1256,10 @@ def health_page():
 
             if isinstance(risk, dict):
 
-                severity = str(
-                    risk.get("severity", "Low")
-                ).upper()
+                severity = risk.get(
+                    "severity",
+                    "Low",
+                )
 
                 title = (
                     risk.get("title")
@@ -1302,12 +1274,19 @@ def health_page():
                     or risk.get("action")
                 )
 
-                st.caption(f"{severity} PRIORITY")
 
-                st.markdown(f"### {esc(title)}")
+                st.caption(
+                    f"{str(severity).upper()} PRIORITY"
+                )
+
+                st.markdown(
+                    f"### {esc(title)}"
+                )
+
 
                 if message:
                     st.write(message)
+
 
                 if action:
                     st.info(
@@ -1319,105 +1298,160 @@ def health_page():
                 st.write(str(risk))
 
 
-# ============================================================
+# =========================================================
 # AI ASSISTANT
-# ============================================================
+# =========================================================
 
 def assistant_page(assistant):
 
-    output = st.session_state.engine_output or {}
-
     profile = st.session_state.profile
 
-    hero(
-        "Conversational learning intelligence",
-        "Ask anything about your path.",
-        "Get contextual explanations about your roadmap, skills, "
-        "recommendations and next steps.",
+    output = st.session_state.engine_output or {}
+
+
+    st.markdown("## Ask PathPilot")
+
+    st.caption(
+        "Ask questions about your learning roadmap, skills and next steps."
     )
 
-    suggestions = [
+
+    prompts = [
 
         "What should I learn next?",
 
-        "What skills am I missing?",
-
-        "How can I improve my learning path?",
-
         "What is blocking my progress?",
+
+        "How can I improve my path?",
+
+        "Which skill has the highest impact?",
 
     ]
 
+
     columns = st.columns(4)
 
-    for index, suggestion in enumerate(suggestions):
+
+    for index, prompt in enumerate(prompts):
 
         with columns[index]:
 
             if st.button(
-                suggestion,
-                key=f"suggestion_{index}",
+                prompt,
+                key=f"prompt_{index}",
                 use_container_width=True,
             ):
 
-                st.session_state.assistant_question = suggestion
+                st.session_state.assistant_question = prompt
 
-    st.write("")
 
     question = st.text_input(
+
         "Ask PathPilot",
+
         value=st.session_state.assistant_question,
+
         placeholder=(
             "Example: What should I focus on this week?"
         ),
+
     )
+
 
     st.session_state.assistant_question = question
 
+
     if question:
 
-        with st.spinner("PathPilot is thinking..."):
+        answer = safe_call(
 
-            answer = safe_call(
-                getattr(
-                    assistant,
-                    "answer_path_question",
-                    None
-                ) if assistant else None,
-                profile,
-                output,
-                question,
-            )
+            getattr(
+                assistant,
+                "answer_path_question",
+                None,
+            ),
+
+            profile,
+
+            output,
+
+            question,
+
+        )
+
 
         with st.container(border=True):
 
-            st.caption("✦ PATHPILOT INSIGHT")
+            st.caption("PATHPILOT INSIGHT")
 
-            st.markdown(
+            st.write(
                 answer
-                or "I couldn't generate an answer right now."
+                or "I could not generate an answer right now."
             )
 
 
-# ============================================================
-# APPLICATION SHELL
-# ============================================================
+# =========================================================
+# SIDEBAR
+# =========================================================
 
-def app_shell(engine, adaptive_engine, assistant):
-
-    profile = st.session_state.profile
-
-    output = st.session_state.engine_output
-
-    if not profile or output is None:
-
-        st.session_state.stage = "profiling"
-
-        st.rerun()
+def sidebar(profile):
 
     with st.sidebar:
 
-        brand()
+
+        st.markdown(
+            """
+<div style="
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:4px;
+">
+
+    <div style="
+        width:38px;
+        height:38px;
+        border-radius:12px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:linear-gradient(135deg,#7778E8,#4F50C9);
+        color:white;
+        font-size:18px;
+        font-weight:800;
+    ">
+        ✦
+    </div>
+
+    <div>
+
+        <div style="
+            font-family:Manrope,sans-serif;
+            font-size:20px;
+            font-weight:800;
+            color:white;
+        ">
+            PathPilot
+        </div>
+
+        <div style="
+            font-size:10px;
+            color:#9BA3B8;
+            margin-top:2px;
+        ">
+            Learning intelligence
+        </div>
+
+    </div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+
+        st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+
 
         options = [
 
@@ -1433,25 +1467,35 @@ def app_shell(engine, adaptive_engine, assistant):
 
         ]
 
+
         current = st.session_state.nav_section
 
+
         if current not in options:
-            current = "Overview"
+            current = options[0]
+
 
         section = st.radio(
+
             "Navigation",
+
             options,
+
             index=options.index(current),
+
             label_visibility="collapsed",
+
         )
+
 
         st.session_state.nav_section = section
 
+
         st.divider()
 
+
         st.markdown(
-            f"### {esc(getattr(profile, 'name', 'Learner'))}",
-            unsafe_allow_html=True,
+            f"**{esc(getattr(profile, 'name', 'Learner'))}**"
         )
 
         st.caption(
@@ -1459,16 +1503,21 @@ def app_shell(engine, adaptive_engine, assistant):
                 getattr(
                     profile,
                     "career_goal",
-                    "Personalized Learning Path"
+                    "Learning path",
                 )
             )
         )
 
-        st.write("")
+
+        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
 
         if st.button(
-            "↻ Restart journey",
+
+            "Restart journey",
+
             use_container_width=True,
+
         ):
 
             keys = [
@@ -1489,45 +1538,188 @@ def app_shell(engine, adaptive_engine, assistant):
 
             ]
 
+
             for key in keys:
+
                 st.session_state.pop(key, None)
+
 
             init_state()
 
             st.rerun()
 
-    # --------------------------------------------------------
-    # ROUTING
-    # --------------------------------------------------------
+
+    return st.session_state.nav_section
+
+
+# =========================================================
+# MAIN APPLICATION
+# =========================================================
+
+def app_shell(engine, adaptive_engine, assistant):
+
+    profile = st.session_state.profile
+
+    output = st.session_state.engine_output
+
+
+    if not profile or output is None:
+
+        st.session_state.stage = "profiling"
+
+        st.rerun()
+
+
+    section = sidebar(profile)
+
+
+    health = output.get("path_health") or {}
+
+
+    status = health.get(
+        "status",
+        "Analyzing",
+    )
+
+
+    score = health.get(
+        "health_score",
+        "—",
+    )
+
+
+    # -----------------------------------------------------
+    # APP HEADER
+    # -----------------------------------------------------
+
+    left, right = st.columns([4, 1])
+
+
+    with left:
+
+        st.markdown(
+            f"""
+<div style="margin-bottom:20px;">
+
+    <div style="
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:.11em;
+        text-transform:uppercase;
+        color:#5B5CE2;
+    ">
+        Your Learning Workspace
+    </div>
+
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:38px;
+        font-weight:800;
+        letter-spacing:-.05em;
+        color:#1E293B;
+        margin-top:7px;
+    ">
+        Good to see you, {esc(getattr(profile, 'name', 'there'))}.
+    </div>
+
+    <div style="
+        color:#718096;
+        margin-top:8px;
+        font-size:15px;
+    ">
+        Your personalized learning intelligence, roadmap and next actions.
+    </div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+
+    with right:
+
+        st.markdown(
+            f"""
+<div style="
+    background:white;
+    border:1px solid #E5E7EF;
+    border-radius:18px;
+    padding:16px;
+    margin-top:15px;
+">
+
+    <div style="
+        font-size:10px;
+        font-weight:800;
+        letter-spacing:.08em;
+        color:#9AA2B1;
+    ">
+        PATH STATUS
+    </div>
+
+    <div style="
+        font-family:Manrope,sans-serif;
+        font-size:19px;
+        font-weight:800;
+        color:#1E293B;
+        margin-top:5px;
+    ">
+        {esc(status)}
+    </div>
+
+    <div style="
+        color:#718096;
+        font-size:12px;
+        margin-top:3px;
+    ">
+        {esc(score)} / 100 health score
+    </div>
+
+</div>
+""",
+            unsafe_allow_html=True,
+        )
+
+
+    # -----------------------------------------------------
+    # NAVIGATION
+    # -----------------------------------------------------
 
     if section == "Overview":
 
         render_dashboard(profile, output)
+
 
     elif section == "Next Action":
 
         next_action(
             engine,
             adaptive_engine,
-            assistant
+            assistant,
         )
+
 
     elif section == "Learning Roadmap":
 
-        render_roadmap(profile, output)
+        render_roadmap(
+            profile,
+            output,
+        )
+
 
     elif section == "Path Health":
 
         health_page()
 
-    else:
+
+    elif section == "AI Assistant":
 
         assistant_page(assistant)
 
 
-# ============================================================
-# APPLICATION START
-# ============================================================
+# =========================================================
+# INITIALIZE INTELLIGENCE LAYER
+# =========================================================
 
 try:
 
@@ -1536,6 +1728,7 @@ try:
     assistant = get_assistant()
 
     adaptive_engine = AdaptiveEngine(engine)
+
 
 except Exception as exc:
 
@@ -1546,18 +1739,24 @@ except Exception as exc:
     st.stop()
 
 
+# =========================================================
+# ROUTING
+# =========================================================
+
 if st.session_state.stage == "welcome":
 
     welcome()
 
+
 elif st.session_state.stage == "profiling":
 
     profiling(engine)
+
 
 else:
 
     app_shell(
         engine,
         adaptive_engine,
-        assistant
+        assistant,
     )
