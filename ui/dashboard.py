@@ -13,7 +13,7 @@ except Exception:
 
 
 def render_dashboard(profile, engine_output, safe_call, engine):
-    st.markdown('<div class="pp-eyebrow">DECISION WORKSPACE</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pp-eyebrow">LEARNING INTELLIGENCE SNAPSHOT</div>', unsafe_allow_html=True)
     st.markdown('<h2 class="pp-section-title">Overview</h2>', unsafe_allow_html=True)
 
     readiness = engine_output.get("readiness")
@@ -33,20 +33,20 @@ def render_dashboard(profile, engine_output, safe_call, engine):
 
     with col_left:
         st.markdown('<div class="pp-card">', unsafe_allow_html=True)
-        st.markdown('<div class="pp-eyebrow">SKILLS COVERAGE</div>', unsafe_allow_html=True)
+        st.markdown('<div class="pp-eyebrow">SKILLS LANDSCAPE</div>', unsafe_allow_html=True)
         current_skills = list(getattr(profile, "current_skills", []) or [])
         _render_skills_chart(current_skills, missing_skills)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_right:
         st.markdown('<div class="pp-card">', unsafe_allow_html=True)
-        st.markdown('<div class="pp-eyebrow">PRIORITIZED SKILL GAPS</div>', unsafe_allow_html=True)
+        st.markdown('<div class="pp-eyebrow">PRIORITY GAPS</div>', unsafe_allow_html=True)
         _render_skill_gap_list(missing_skills)
         st.markdown('</div>', unsafe_allow_html=True)
 
     st.write("")
     st.markdown('<div class="pp-card">', unsafe_allow_html=True)
-    st.markdown('<div class="pp-eyebrow">CURRENT POSITION</div>', unsafe_allow_html=True)
+    st.markdown('<div class="pp-eyebrow">YOUR CURRENT POSITION</div>', unsafe_allow_html=True)
     snap_col1, snap_col2 = st.columns(2)
     with snap_col1:
         st.markdown(
@@ -70,30 +70,45 @@ def render_dashboard(profile, engine_output, safe_call, engine):
 
 def _render_metric_cards(readiness_score, health_score, health_status, missing_count, risk_count):
     is_good_readiness = isinstance(readiness_score, (int, float)) and readiness_score >= 60
-    cards = [
-        ("Readiness", f"{readiness_score}%" if readiness_score is not None else "—",
-         "Improving" if is_good_readiness else "Building up",
-         "trend-good" if is_good_readiness else "trend-neutral"),
-        ("Path Health", f"{health_score}", health_status,
-         {"Healthy": "trend-good", "At Risk": "trend-warn", "Critical": "trend-bad"}.get(health_status, "trend-neutral")),
-        ("Missing Skills", str(missing_count), "Skills remaining", "trend-neutral"),
-        ("Active Risks", str(risk_count), "Needs attention" if risk_count > 0 else "All clear",
-         "trend-bad" if risk_count > 0 else "trend-good"),
-    ]
 
-    cols = st.columns(4)
-    for col, (label, value, desc, trend_class) in zip(cols, cards):
-        with col:
-            st.markdown(
-                f"""
-                <div class="pp-metric-card">
-                    <div class="pp-metric-label">{label}</div>
-                    <div class="pp-metric-value">{value}</div>
-                    <div class="pp-metric-desc {trend_class}">{desc}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    # Hero metric: readiness — given more visual weight than the rest.
+    hero_col, rest_col = st.columns([1.15, 2.4])
+    with hero_col:
+        readiness_display = f"{readiness_score}%" if readiness_score is not None else "—"
+        readiness_desc = "Improving" if is_good_readiness else "Building up"
+        readiness_trend = "trend-good" if is_good_readiness else "trend-neutral"
+        st.markdown(
+            f"""
+            <div class="pp-metric-card hero">
+                <div class="pp-metric-label">READINESS SCORE</div>
+                <div class="pp-metric-value" style="font-size:2.2rem;">{readiness_display}</div>
+                <div class="pp-metric-desc {readiness_trend}">{readiness_desc}</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    with rest_col:
+        cards = [
+            ("Path Health", f"{health_score}", health_status,
+             {"Healthy": "trend-good", "At Risk": "trend-warn", "Critical": "trend-bad"}.get(health_status, "trend-neutral")),
+            ("Missing Skills", str(missing_count), "Skills remaining", "trend-neutral"),
+            ("Active Risks", str(risk_count), "Needs attention" if risk_count > 0 else "All clear",
+             "trend-bad" if risk_count > 0 else "trend-good"),
+        ]
+        cols = st.columns(3)
+        for col, (label, value, desc, trend_class) in zip(cols, cards):
+            with col:
+                st.markdown(
+                    f"""
+                    <div class="pp-metric-card">
+                        <div class="pp-metric-label">{label.upper()}</div>
+                        <div class="pp-metric-value">{value}</div>
+                        <div class="pp-metric-desc {trend_class}">{desc}</div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
 
 def _extract_score(readiness):
@@ -131,10 +146,11 @@ def _render_skills_chart(current_skills, missing_skills):
         fig = go.Figure(
             data=[
                 go.Bar(
-                    x=["Possessed", "Missing"],
+                    x=["Current Skills", "Skills Needed"],
                     y=[possessed_count, missing_count],
-                    marker_color=["#7C7FF2", "#26283A"],
-                    marker_line_width=0,
+                    marker_color=["#5B5CE2", "#ECEEF6"],
+                    marker_line_color=["#5B5CE2", "#D8DAE8"],
+                    marker_line_width=1,
                     width=0.5,
                 )
             ]
@@ -144,9 +160,9 @@ def _render_skills_chart(current_skills, missing_skills):
             margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#7C7C88",
+            font_color="#6E7280",
             font_family="Inter",
-            yaxis=dict(gridcolor="rgba(255,255,255,0.05)", title="Skill Count"),
+            yaxis=dict(gridcolor="rgba(23,25,35,0.06)", title="Skill Count"),
             xaxis=dict(showgrid=False),
         )
         st.plotly_chart(fig, use_container_width=True)
