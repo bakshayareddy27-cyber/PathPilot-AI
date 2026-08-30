@@ -1,345 +1,275 @@
-"""
-PathPilot AI — Streamlit application entrypoint.
-"Don't just recommend what to learn. Decide what to learn next."
-"""
-
 import json
+import html
 import streamlit as st
 
 from core.profiler import LearnerProfile
 from core.intelligence_engine import IntelligenceEngine
 from core.adaptive_engine import AdaptiveEngine, AdaptationState
 from core.ai_assistant import AIAssistant
-
 from ui.dashboard import render_dashboard
 from ui.roadmap import render_roadmap
 
 
 st.set_page_config(
     page_title="PathPilot AI",
-    page_icon="◆",
+    page_icon="✦",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ======================================================================
-# DESIGN SYSTEM  /  GLOBAL STYLES
-# ======================================================================
-st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=DM+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root {
-    --bg: #F7F8FC;
-    --surface: #FFFFFF;
-    --surface-raised: #FFFFFF;
-    --surface-elevated: #F1F2F8;
-    --surface-sunken: #ECEEF6;
-    --border: rgba(23,25,35,0.08);
-    --border-strong: rgba(23,25,35,0.15);
 
-    --accent: #5B5CE2;
-    --accent-dark: #4A4BD1;
-    --accent-soft: rgba(91,92,226,0.08);
-    --accent-soft-strong: rgba(91,92,226,0.14);
-    --accent-dim: rgba(91,92,226,0.30);
+def inject_css():
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
 
-    --text-primary: #171A2B;
-    --text-secondary: #454A61;
-    --text-muted: #6E7280;
-    --text-faint: #9B9EAD;
+    :root {
+        --bg: #F6F7FB;
+        --surface: #FFFFFF;
+        --surface-2: #F1F3F8;
+        --ink: #172033;
+        --muted: #697386;
+        --line: #E5E9F1;
+        --primary: #5B5CE2;
+        --primary-dark: #4546C8;
+        --primary-soft: #EEEDFF;
+        --green: #158A5B;
+        --green-soft: #EAF8F1;
+        --amber: #B7791F;
+        --amber-soft: #FFF6E6;
+        --red: #C84B5A;
+        --red-soft: #FFF0F2;
+    }
 
-    --success: #16A34A;
-    --success-soft: rgba(22,163,74,0.09);
-    --warning: #D97706;
-    --warning-soft: rgba(217,119,6,0.09);
-    --danger: #DC2626;
-    --danger-soft: rgba(220,38,38,0.09);
+    html, body, [class*="css"] {
+        font-family: "DM Sans", sans-serif;
+    }
 
-    --font-display: 'Manrope', sans-serif;
-    --font-body: 'DM Sans', sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
+    .stApp {
+        background:
+            radial-gradient(circle at 85% 0%, rgba(91,92,226,.08), transparent 25%),
+            radial-gradient(circle at 0% 45%, rgba(21,138,91,.045), transparent 24%),
+            var(--bg);
+        color: var(--ink);
+    }
 
-    --space-xs: 0.4rem;
-    --space-sm: 0.75rem;
-    --space-md: 1.25rem;
-    --space-lg: 2rem;
-    --space-xl: 3rem;
+    #MainMenu, footer, header { visibility: hidden; }
 
-    --radius-sm: 8px;
-    --radius-md: 12px;
-    --radius-lg: 18px;
+    .block-container {
+        max-width: 1320px;
+        padding-top: 2rem;
+        padding-bottom: 3rem;
+    }
 
-    --shadow-sm: 0 1px 3px rgba(23,25,35,0.06);
-    --shadow-md: 0 6px 20px rgba(23,25,35,0.08);
-    --shadow-lg: 0 14px 40px rgba(23,25,35,0.10);
-}
+    h1, h2, h3 {
+        font-family: "Manrope", sans-serif !important;
+        letter-spacing: -.035em !important;
+        color: var(--ink) !important;
+    }
 
-html, body, .stApp, [class*="css"] { font-family: var(--font-body) !important; }
-.stApp { background-color: var(--bg); color: var(--text-primary); }
-h1, h2, h3, h4, .pp-display { font-family: var(--font-display) !important; letter-spacing: -0.015em; }
-#MainMenu, footer, header { visibility: hidden; }
-hr { border-color: var(--border); }
-.block-container { padding-top: 2.4rem; padding-bottom: 3.5rem; max-width: 1160px; }
-* { box-sizing: border-box; }
+    /* --- Sidebar Custom Styling --- */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #111827 0%, #182033 100%);
+        border-right: 1px solid rgba(255, 255, 255, .07);
+    }
 
-/* ======================================================================
-   APP SHELL / PAGE HEADER
-====================================================================== */
-.pp-page-header {
-    display: flex; justify-content: space-between; align-items: flex-end;
-    padding-bottom: var(--space-lg); margin-bottom: var(--space-lg);
-    border-bottom: 1px solid var(--border);
-    flex-wrap: wrap; gap: var(--space-md);
-}
-.pp-page-header h1 { font-size: 1.65rem; font-weight: 700; margin: 0 0 4px 0; color: var(--text-primary); }
-.pp-page-header p { color: var(--text-muted); font-size: 0.92rem; margin: 0; max-width: 460px; }
+    section[data-testid="stSidebar"] h1, 
+    section[data-testid="stSidebar"] h2, 
+    section[data-testid="stSidebar"] h3,
+    section[data-testid="stSidebar"] p,
+    section[data-testid="stSidebar"] span,
+    section[data-testid="stSidebar"] label {
+        color: #F7F8FC !important;
+    }
 
-.pp-status-chip {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-md); padding: 0.85rem 1.2rem; text-align: right; min-width: 150px;
-    box-shadow: var(--shadow-sm); transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-.pp-status-chip:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-.pp-status-label { font-size: 0.63rem; letter-spacing: 0.1em; color: var(--text-faint); text-transform: uppercase; }
-.pp-status-value { font-family: var(--font-mono); font-size: 1.25rem; font-weight: 600; margin-top: 3px; color: var(--text-primary); }
-.pp-status-sub { color: var(--text-faint); font-size: 0.73rem; font-family: var(--font-mono); }
+    section[data-testid="stSidebar"] .stCaption {
+        color: #AAB4C6 !important;
+    }
 
-/* ======================================================================
-   SIDEBAR
-====================================================================== */
-section[data-testid="stSidebar"] { background: var(--surface); border-right: 1px solid var(--border); }
-section[data-testid="stSidebar"] .block-container { padding-top: 1.8rem; }
+    section[data-testid="stSidebar"] hr {
+        border-color: rgba(255, 255, 255, .10);
+    }
 
-.pp-brand { display: flex; align-items: center; gap: 10px; margin-bottom: 0.1rem; }
-.pp-brand-mark {
-    width: 28px; height: 28px; border-radius: 8px;
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark));
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; color: #FFFFFF; font-weight: 700;
-    box-shadow: 0 4px 10px rgba(91,92,226,0.28);
-}
-.pp-brand-name { font-family: var(--font-display); font-weight: 700; font-size: 1rem; color: var(--text-primary); }
-.pp-brand-sub {
-    font-size: 0.7rem; color: var(--text-faint);
-    margin: 0.2rem 0 1.7rem 38px;
-}
+    section[data-testid="stSidebar"] div[role="radiogroup"] label {
+        padding: 10px 12px;
+        border-radius: 12px;
+        margin: 3px 0;
+        transition: background .18s ease, transform .18s ease;
+    }
 
-section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 2px; }
-section[data-testid="stSidebar"] div[role="radiogroup"] label {
-    border-radius: var(--radius-sm); padding: 8px 12px !important;
-    margin-bottom: 1px; transition: background 0.15s ease, transform 0.15s ease; width: 100%;
-}
-section[data-testid="stSidebar"] div[role="radiogroup"] label:hover { background: var(--accent-soft); transform: translateX(2px); }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) {
-    background: var(--accent-soft-strong); border-left: 3px solid var(--accent);
-}
-section[data-testid="stSidebar"] div[role="radiogroup"] input { accent-color: var(--accent); }
-section[data-testid="stSidebar"] div[role="radiogroup"] label p { font-size: 0.86rem; color: var(--text-muted); font-weight: 500; }
-section[data-testid="stSidebar"] div[role="radiogroup"] label:has(input:checked) p { color: var(--accent-dark); font-weight: 600; }
+    section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
+        background: rgba(255, 255, 255, .08);
+        transform: translateX(3px);
+    }
 
-.pp-user-card { border-top: 1px solid var(--border); margin-top: var(--space-md); padding-top: var(--space-sm); }
-.pp-user-name { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
-.pp-user-role { color: var(--text-faint); font-size: 0.75rem; margin-top: 1px; }
+    /* --- Input Fields Fix (Contrast & Visibility) --- */
+    div[data-baseweb="input"] input,
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="select"] div {
+        color: #172033 !important;
+        background-color: #FFFFFF !important;
+        border-radius: 12px !important;
+    }
 
-/* ======================================================================
-   TYPOGRAPHY / SHARED
-====================================================================== */
-.pp-eyebrow {
-    font-size: 0.68rem; letter-spacing: 0.13em; text-transform: uppercase;
-    color: var(--accent); font-weight: 700; margin-bottom: 0.45rem;
-}
-.pp-section-title { font-size: 1.3rem; font-weight: 700; margin: 0 0 var(--space-md) 0; color: var(--text-primary); }
+    div[data-testid="stTextInput"] label,
+    div[data-testid="stTextArea"] label,
+    div[data-testid="stSelectbox"] label,
+    div[data-testid="stSlider"] label,
+    div[data-testid="stNumberInput"] label {
+        color: #172033 !important;
+        font-weight: 600 !important;
+    }
 
-/* ======================================================================
-   BUTTONS
-====================================================================== */
-.stButton > button {
-    background: var(--surface); color: var(--text-secondary);
-    border: 1px solid var(--border-strong); border-radius: 9px;
-    font-weight: 500; padding: 0.55rem 1.05rem;
-    transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
-}
-.stButton > button:hover { border-color: var(--accent); background: var(--accent-soft); color: var(--accent-dark); box-shadow: var(--shadow-sm); transform: translateY(-1px); }
-.stButton > button:active { transform: translateY(0); }
+    /* Slider Specific Fixes */
+    div[data-testid="stSlider"] div[data-testid="stMarkdownContainer"] p {
+        color: #172033 !important;
+    }
 
-div[data-testid="stFormSubmitButton"] > button, .pp-primary-btn button {
-    background: linear-gradient(135deg, var(--accent), var(--accent-dark)) !important;
-    border: none !important; color: #FFFFFF !important; font-weight: 600 !important;
-    box-shadow: 0 6px 16px rgba(91,92,226,0.28);
-}
-div[data-testid="stFormSubmitButton"] > button:hover, .pp-primary-btn button:hover {
-    box-shadow: 0 8px 22px rgba(91,92,226,0.38); transform: translateY(-1px);
-}
+    /* Cards & Containers */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        border: 1px solid var(--line) !important;
+        border-radius: 20px !important;
+        background: rgba(255, 255, 255, .92) !important;
+        box-shadow: 0 10px 30px rgba(26, 35, 60, .045);
+        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+    }
 
-/* ======================================================================
-   CARDS
-====================================================================== */
-.pp-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-md); padding: 1.35rem 1.5rem;
-    box-shadow: var(--shadow-sm);
-    transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
-}
-.pp-card:hover { border-color: var(--border-strong); box-shadow: var(--shadow-md); transform: translateY(-2px); }
+    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 42px rgba(26, 35, 60, .08);
+        border-color: #D9DDF0 !important;
+    }
 
-/* ======================================================================
-   LANDING PAGE
-====================================================================== */
-.pp-landing-top { display: flex; align-items: center; gap: 10px; padding: 0.4rem 0 2.4rem 0; }
-.pp-landing-hero { text-align: center; padding: 1.6rem 1rem 1.4rem 1rem; }
-.pp-landing-badge {
-    display: inline-flex; align-items: center; gap: 8px;
-    border: 1px solid var(--border-strong); background: var(--surface);
-    border-radius: 999px; padding: 0.4rem 1.05rem; font-size: 0.78rem; color: var(--accent-dark);
-    margin-bottom: var(--space-md); font-weight: 600;
-    box-shadow: var(--shadow-sm);
-}
-.pp-landing-hero h1 {
-    font-size: 2.75rem; font-weight: 800; margin-bottom: 0.95rem; line-height: 1.14;
-    color: var(--text-primary);
-}
-.pp-landing-hero p.pp-tagline { color: var(--text-muted); font-size: 1.08rem; max-width: 580px; margin: 0 auto; line-height: 1.6; }
+    div[data-testid="stMetric"] {
+        background: rgba(255, 255, 255, .88);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 15px 17px;
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
 
-.pp-concept-row { display: flex; gap: 0; border-top: 1px solid var(--border); margin-top: var(--space-xl); }
-.pp-concept-col {
-    flex: 1; padding: 1.6rem 1.5rem; border-right: 1px solid var(--border);
-    transition: background 0.18s ease, transform 0.18s ease;
-}
-.pp-concept-col:last-child { border-right: none; }
-.pp-concept-col:hover { background: var(--accent-soft); transform: translateY(-2px); }
-.pp-concept-num { font-family: var(--font-mono); color: var(--accent); font-size: 0.75rem; margin-bottom: 0.6rem; font-weight: 600; letter-spacing: 0.03em; }
-.pp-concept-title { font-family: var(--font-display); font-weight: 700; font-size: 1.03rem; margin-bottom: 0.4rem; color: var(--text-primary); }
-.pp-concept-desc { color: var(--text-muted); font-size: 0.86rem; line-height: 1.55; }
+    div[data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 14px 30px rgba(26, 35, 60, .07);
+    }
 
-/* ======================================================================
-   ONBOARDING
-====================================================================== */
-.pp-onboarding-header { text-align: center; margin-bottom: var(--space-lg); }
-.pp-progress-track { display: flex; gap: 6px; max-width: 340px; margin: 1rem auto 0 auto; }
-.pp-progress-seg { flex: 1; height: 4px; border-radius: 4px; background: var(--surface-sunken); }
-.pp-progress-seg.done { background: var(--accent); }
+    .stButton > button,
+    .stFormSubmitButton > button {
+        min-height: 44px !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+        border: 1px solid #DDE2EC !important;
+        transition: all .18s ease !important;
+    }
 
-.pp-step-header { display: flex; align-items: center; gap: 11px; margin: 1.8rem 0 0.9rem 0; }
-.pp-step-num {
-    width: 24px; height: 24px; border-radius: 50%; background: var(--accent-soft);
-    border: 1px solid var(--accent-dim); display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-dark); flex-shrink: 0; font-weight: 600;
-}
-.pp-step-title { font-weight: 700; font-size: 0.98rem; color: var(--text-primary); }
-.pp-step-sub { color: var(--text-faint); font-size: 0.8rem; margin: -0.4rem 0 0.6rem 35px; }
+    .stButton > button:hover,
+    .stFormSubmitButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px rgba(26, 35, 60, .12);
+    }
 
-/* ======================================================================
-   DASHBOARD METRICS
-====================================================================== */
-.pp-metric-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-radius: var(--radius-md); padding: 1.15rem 1.3rem;
-    box-shadow: var(--shadow-sm); transition: box-shadow 0.18s ease, transform 0.18s ease;
-}
-.pp-metric-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
-.pp-metric-card.hero { background: linear-gradient(150deg, var(--accent-soft), var(--surface)); border-color: var(--accent-dim); }
-.pp-metric-label { font-size: 0.72rem; color: var(--text-faint); font-weight: 600; letter-spacing: 0.02em; }
-.pp-metric-value { font-family: var(--font-mono); font-size: 1.75rem; font-weight: 600; margin: 0.18rem 0; color: var(--text-primary); }
-.pp-metric-desc { font-size: 0.76rem; font-weight: 600; }
-.trend-good { color: var(--success); }
-.trend-warn { color: var(--warning); }
-.trend-bad { color: var(--danger); }
-.trend-neutral { color: var(--text-faint); }
+    .stButton > button[kind="primary"],
+    .stFormSubmitButton > button[kind="primary"] {
+        background: linear-gradient(135deg, var(--primary), #7778F0) !important;
+        color: white !important;
+        border: none !important;
+    }
 
-/* ======================================================================
-   NEXT BEST ACTION
-====================================================================== */
-.pp-nba-card {
-    background: linear-gradient(155deg, var(--accent-soft) 0%, var(--surface) 55%);
-    border: 1px solid var(--accent-dim);
-    border-radius: var(--radius-lg); padding: 2rem 2.2rem; margin-bottom: var(--space-md);
-    box-shadow: var(--shadow-md);
-}
-.pp-nba-eyebrow { font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.13em; color: var(--accent-dark); text-transform: uppercase; margin-bottom: 0.55rem; font-weight: 700; }
-.pp-nba-skill { font-family: var(--font-display); font-size: 2rem; font-weight: 800; margin: 0 0 1.2rem 0; color: var(--text-primary); }
-.pp-nba-stats { display: flex; gap: 2.4rem; flex-wrap: wrap; }
-.pp-nba-stat-label { font-size: 0.7rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
-.pp-nba-stat-value { font-family: var(--font-mono); font-size: 1.22rem; font-weight: 700; margin-top: 3px; color: var(--text-primary); }
-.pp-nba-why { margin-top: 1.4rem; padding-top: 1.2rem; border-top: 1px solid var(--border-strong); }
-.pp-insight-row { display: flex; align-items: flex-start; gap: 9px; padding: 0.4rem 0; }
-.pp-insight-check { color: var(--success); font-size: 0.9rem; margin-top: 1px; }
-.pp-insight-text { color: var(--text-secondary); font-size: 0.87rem; line-height: 1.5; }
+    details {
+        border-radius: 14px !important;
+        border: 1px solid var(--line) !important;
+        background: white !important;
+    }
 
-.pp-score-row { margin-bottom: 0.85rem; }
-.pp-score-top { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 5px; }
-.pp-score-name { color: var(--text-muted); font-weight: 500; }
-.pp-score-num { font-family: var(--font-mono); font-weight: 700; color: var(--text-primary); }
-.pp-score-track { background: var(--surface-sunken); border-radius: 6px; height: 7px; overflow: hidden; }
-.pp-score-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); transition: width 0.4s ease; }
+    .pp-kicker {
+        color: var(--primary);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        margin-bottom: .45rem;
+    }
 
-.pp-badge {
-    display: inline-block; padding: 0.28rem 0.78rem; border-radius: 999px;
-    font-size: 0.72rem; font-weight: 700; font-family: var(--font-mono);
-}
-.badge-healthy { background: var(--success-soft); color: var(--success); border: 1px solid rgba(22,163,74,0.25); }
-.badge-atrisk { background: var(--warning-soft); color: var(--warning); border: 1px solid rgba(217,119,6,0.25); }
-.badge-critical { background: var(--danger-soft); color: var(--danger); border: 1px solid rgba(220,38,38,0.25); }
+    .pp-title {
+        font-family: "Manrope", sans-serif;
+        font-size: clamp(2rem, 4vw, 3.45rem);
+        font-weight: 800;
+        line-height: 1.06;
+        letter-spacing: -.055em;
+        color: var(--ink);
+        margin: 0;
+    }
 
-.pp-chip {
-    display: inline-block; background: var(--surface-elevated);
-    border: 1px solid var(--border-strong); border-radius: 999px;
-    padding: 0.4rem 0.9rem; font-size: 0.79rem; color: var(--text-muted);
-    margin: 0 6px 6px 0; transition: border-color 0.15s ease, color 0.15s ease;
-}
-.pp-chip:hover { border-color: var(--accent); color: var(--accent-dark); }
+    .pp-subtitle {
+        color: var(--muted);
+        font-size: 1rem;
+        line-height: 1.7;
+        max-width: 760px;
+        margin-top: .75rem;
+    }
 
-/* ======================================================================
-   PATH HEALTH
-====================================================================== */
-.pp-risk-card {
-    background: var(--surface); border: 1px solid var(--border);
-    border-left: 3px solid var(--text-faint);
-    border-radius: 10px; padding: 1rem 1.2rem; margin-bottom: 0.7rem;
-    box-shadow: var(--shadow-sm); transition: transform 0.15s ease, box-shadow 0.15s ease;
-}
-.pp-risk-card:hover { transform: translateX(2px); box-shadow: var(--shadow-md); }
-.pp-risk-high { border-left-color: var(--danger); }
-.pp-risk-medium { border-left-color: var(--warning); }
-.pp-risk-low { border-left-color: var(--accent); }
-.pp-risk-severity { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 700; }
-.pp-risk-high .pp-risk-severity { color: var(--danger); }
-.pp-risk-medium .pp-risk-severity { color: var(--warning); }
-.pp-risk-low .pp-risk-severity { color: var(--accent); }
-.pp-risk-title { font-weight: 700; font-size: 0.96rem; margin: 3px 0 5px 0; color: var(--text-primary); }
-.pp-risk-msg { color: var(--text-muted); font-size: 0.86rem; margin-bottom: 6px; line-height: 1.5; }
-.pp-risk-action { color: var(--text-faint); font-size: 0.8rem; }
-.pp-risk-action b { color: var(--text-muted); }
+    .pp-brand {
+        font-family: "Manrope", sans-serif;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -.04em;
+    }
 
-/* ======================================================================
-   AI ASSISTANT
-====================================================================== */
-.pp-assistant-answer {
-    background: var(--surface); border: 1px solid var(--accent-dim);
-    border-radius: var(--radius-md); padding: 1.2rem 1.4rem; margin-top: var(--space-sm);
-    box-shadow: var(--shadow-sm);
-}
+    .pp-brand-dot {
+        width: 38px; height: 38px; border-radius: 12px;
+        display: inline-flex; align-items: center; justify-content: center;
+        background: linear-gradient(135deg, #7A7CF4, #5152D7);
+        color: white; font-weight: 800; margin-right: 10px;
+        box-shadow: 0 10px 22px rgba(91, 92, 226, .28);
+    }
 
-/* ======================================================================
-   RESPONSIVE
-====================================================================== */
-@media (max-width: 768px) {
-    .pp-landing-hero h1 { font-size: 2rem; }
-    .pp-nba-skill { font-size: 1.5rem; }
-    .pp-nba-stats { gap: 1.3rem; }
-    .pp-page-header { flex-direction: column; align-items: flex-start; }
-    .pp-status-chip { text-align: left; }
-    .pp-concept-row { flex-direction: column; }
-    .pp-concept-col { border-right: none; border-bottom: 1px solid var(--border); }
-    .pp-concept-col:last-child { border-bottom: none; }
-}
-</style>
-""", unsafe_allow_html=True)
+    .pp-hero {
+        padding: 2.2rem 0 1.3rem;
+        text-align: center;
+    }
 
-# ----------------------------------------------------------------------
-# Session state init
-# ----------------------------------------------------------------------
-def init_session_state():
+    .pp-pill {
+        display: inline-block;
+        padding: .42rem .8rem;
+        border-radius: 999px;
+        background: var(--primary-soft);
+        color: var(--primary);
+        font-size: .72rem;
+        font-weight: 800;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+        border: 1px solid #DDD9FF;
+    }
+
+    @media(max-width: 760px) {
+        .block-container { padding: 1.2rem 1rem 2rem; }
+        .pp-title { font-size: 2.2rem; }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+inject_css()
+
+
+def esc(value):
+    return html.escape(str(value if value is not None else "—"))
+
+
+def hero(eyebrow, title, subtitle):
+    st.markdown(
+        f"""
+        <div>
+            <div class="pp-kicker">{esc(eyebrow)}</div>
+            <div class="pp-title">{esc(title)}</div>
+            <div class="pp-subtitle">{esc(subtitle)}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def init_state():
     defaults = {
         "stage": "welcome",
         "profile": None,
@@ -349,21 +279,17 @@ def init_session_state():
         "nav_section": "Overview",
         "assistant_question": "",
     }
-    for key, val in defaults.items():
+    for key, value in defaults.items():
         if key not in st.session_state:
-            st.session_state[key] = val
+            st.session_state[key] = value
 
 
-init_session_state()
+init_state()
 
 
 @st.cache_resource
 def get_engine():
-    try:
-        return IntelligenceEngine()
-    except Exception as e:
-        st.error(f"Failed to load intelligence engine: {e}")
-        return None
+    return IntelligenceEngine()
 
 
 @st.cache_resource
@@ -371,601 +297,399 @@ def get_assistant():
     return AIAssistant()
 
 
-engine = get_engine()
-assistant = get_assistant()
-adaptive_engine = AdaptiveEngine(engine) if engine else None
-
-
-# ----------------------------------------------------------------------
-# Helpers
-# ----------------------------------------------------------------------
 def safe_call(fn, *args, **kwargs):
-    if fn is None:
-        return None
     try:
-        return fn(*args, **kwargs)
-    except Exception as e:
-        st.warning(f"A calculation step had an issue: {e}")
+        return fn(*args, **kwargs) if callable(fn) else None
+    except Exception:
         return None
 
 
-def get_career_options():
+def career_options():
     try:
-        with open("data/career_paths.json", "r") as f:
+        with open("data/career_paths.json", encoding="utf-8") as f:
             data = json.load(f)
         if isinstance(data, dict):
             return list(data.keys())
         if isinstance(data, list):
-            return [d.get("career_goal") or d.get("name") for d in data if isinstance(d, dict)]
+            values = []
+            for item in data:
+                if isinstance(item, dict):
+                    value = item.get("career_goal") or item.get("name")
+                    if value:
+                        values.append(str(value))
+            if values:
+                return values
     except Exception:
         pass
-    return ["Machine Learning Engineer", "Data Scientist", "Full Stack Web Developer", "Cybersecurity Analyst"]
+
+    return [
+        "Machine Learning Engineer",
+        "Data Scientist",
+        "Full Stack Web Developer",
+        "Cybersecurity Analyst",
+    ]
 
 
-def run_engine_pipeline(profile):
-    output = {
-        "skill_gap": safe_call(engine.analyze_skill_gap, profile),
-        "readiness": safe_call(engine.calculate_readiness_score, profile),
-        "next_best_action": safe_call(engine.calculate_next_best_action, profile),
-        "risks": safe_call(engine.detect_risks, profile) or [],
-        "path_health": safe_call(engine.calculate_path_health, profile),
-        "roadmap": safe_call(engine.generate_roadmap, profile) or [],
+def run_pipeline(profile, engine):
+    st.session_state.engine_output = {
+        "skill_gap": safe_call(getattr(engine, "analyze_skill_gap", None), profile),
+        "readiness": safe_call(getattr(engine, "calculate_readiness_score", None), profile),
+        "next_best_action": safe_call(getattr(engine, "calculate_next_best_action", None), profile),
+        "risks": safe_call(getattr(engine, "detect_risks", None), profile) or [],
+        "path_health": safe_call(getattr(engine, "calculate_path_health", None), profile) or {},
+        "roadmap": safe_call(getattr(engine, "generate_roadmap", None), profile) or [],
     }
-    st.session_state.engine_output = output
-    return output
 
 
-def status_badge_class(status):
-    return {
-        "Healthy": "badge-healthy",
-        "At Risk": "badge-atrisk",
-        "Needs Attention": "badge-atrisk",
-        "Critical": "badge-critical",
-    }.get(status, "badge-atrisk")
-
-
-# ----------------------------------------------------------------------
-# WELCOME
-# ----------------------------------------------------------------------
-def render_welcome():
-    st.markdown(
-        '<div class="pp-landing-top">'
-        '<div class="pp-brand-mark" style="width:30px;height:30px;font-size:15px;">◆</div>'
-        '<div class="pp-brand-name" style="font-size:1.05rem;">PathPilot</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.markdown(
-        '<div class="pp-landing-hero">'
-        '<div class="pp-landing-badge">✦ Personalized Learning Intelligence</div>'
-        '<h1>Stop guessing.<br>Start learning with direction.</h1>'
-        '<p class="pp-tagline">PathPilot turns your goals, skills, constraints and learning patterns '
-        'into an explainable learning path you can actually follow.</p>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
-    st.write("")
-    spacer_l, center, spacer_r = st.columns([1, 1, 1])
-    with center:
-        st.markdown('<div class="pp-primary-btn">', unsafe_allow_html=True)
-        clicked = st.button("Build My Learning Path →", use_container_width=True)
-        st.markdown('</div>', unsafe_allow_html=True)
-    if clicked:
-        st.session_state.stage = "profiling"
-        st.rerun()
-
+def welcome():
     st.markdown(
         """
-        <div class="pp-concept-row">
-            <div class="pp-concept-col">
-                <div class="pp-concept-num">01 · PATHPILOT</div>
-                <div class="pp-concept-title">Understand you</div>
-                <div class="pp-concept-desc">Goals, skills and interests become the starting point.</div>
+        <div class="pp-hero">
+            <span class="pp-pill">✦ Personalized learning intelligence</span>
+            <div class="pp-title" style="margin-top:1.2rem;">
+                Stop guessing.<br>
+                <span style="color:#5B5CE2;">Start learning with direction.</span>
             </div>
-            <div class="pp-concept-col">
-                <div class="pp-concept-num">02 · PATHPILOT</div>
-                <div class="pp-concept-title">Find the gaps</div>
-                <div class="pp-concept-desc">Readiness, prerequisites and blockers are analyzed.</div>
-            </div>
-            <div class="pp-concept-col">
-                <div class="pp-concept-num">03 · PATHPILOT</div>
-                <div class="pp-concept-title">Choose the move</div>
-                <div class="pp-concept-desc">One explainable next action instead of random lists.</div>
-            </div>
-            <div class="pp-concept-col">
-                <div class="pp-concept-num">04 · PATHPILOT</div>
-                <div class="pp-concept-title">Adapt with you</div>
-                <div class="pp-concept-desc">Feedback and progress keep the path responsive.</div>
+            <div class="pp-subtitle" style="margin:1rem auto 0;">
+                PathPilot turns your goals, skills, constraints and learning patterns into
+                an explainable path you can actually follow.
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    _, center, _ = st.columns([1, 1.25, 1])
+    with center:
+        if st.button("Build My Learning Path  →", type="primary", use_container_width=True):
+            st.session_state.stage = "profiling"
+            st.rerun()
 
-# ----------------------------------------------------------------------
-# PROFILING
-# ----------------------------------------------------------------------
-def render_profiling():
-    st.markdown(
-        '<div class="pp-onboarding-header">'
-        '<div class="pp-eyebrow" style="justify-content:center; display:flex;">ONBOARDING</div>'
-        '<h2 style="margin:0.2rem 0; color:var(--text-primary);">Let\'s build your path</h2>'
-        '<p style="color:var(--text-muted); margin:0;">Three quick steps. Every answer sharpens your recommendations.</p>'
-        '<div class="pp-progress-track">'
-        '<div class="pp-progress-seg done"></div><div class="pp-progress-seg done"></div><div class="pp-progress-seg done"></div>'
-        '</div>'
-        '</div>',
-        unsafe_allow_html=True,
+    st.write("")
+    steps = [
+        ("01", "Understand you", "Goals, skills and interests become the starting point."),
+        ("02", "Find the gaps", "Readiness, prerequisites and blockers are analyzed."),
+        ("03", "Choose the move", "One explainable next action instead of random lists."),
+        ("04", "Adapt with you", "Feedback and progress keep the path responsive."),
+    ]
+    for col, step in zip(st.columns(4), steps):
+        with col:
+            with st.container(border=True):
+                st.caption(f"{step[0]} · PATHPILOT")
+                st.subheader(step[1])
+                st.write(step[2])
+
+
+def profiling(engine):
+    hero(
+        "Getting started",
+        "Let’s map your starting point.",
+        "Answer a few questions so PathPilot can build a learning path around your actual situation.",
     )
 
-    career_options = get_career_options()
-
-    with st.form("profiling_form"):
-        st.markdown(
-            '<div class="pp-step-header"><div class="pp-step-num">1</div>'
-            '<div class="pp-step-title">Your destination</div></div>'
-            '<div class="pp-step-sub">Where you\'re headed shapes everything else.</div>',
-            unsafe_allow_html=True,
-        )
-        name = st.text_input("Name", placeholder="e.g. Akshaya Reddy")
-        career_goal = st.selectbox("Career Goal", options=career_options)
-        natural_language_goal = st.text_area(
-            "In your own words, what do you want to achieve?",
-            placeholder="I want to become an ML engineer and prepare for internships within the next six months.",
-        )
-
-        st.markdown(
-            '<div class="pp-step-header"><div class="pp-step-num">2</div>'
-            '<div class="pp-step-title">Your current position</div></div>'
-            '<div class="pp-step-sub">This is the baseline PathPilot measures your gaps against.</div>',
-            unsafe_allow_html=True,
-        )
-        experience_level_label = st.select_slider(
-            "Experience Level",
-            options=["Beginner", "Intermediate", "Advanced"],
-            value="Beginner",
-        )
-        experience_map = {"Beginner": 1, "Intermediate": 3, "Advanced": 5}
-        current_skills_raw = st.text_input(
-            "Current Skills (comma-separated)", placeholder="e.g. Python, SQL, Git"
-        )
-        interests_raw = st.text_input(
-            "Interests (comma-separated)", placeholder="e.g. Artificial Intelligence, Data Science"
-        )
-
-        st.markdown(
-            '<div class="pp-step-header"><div class="pp-step-num">3</div>'
-            '<div class="pp-step-title">Your learning reality</div></div>'
-            '<div class="pp-step-sub">Real constraints make for a realistic, achievable path.</div>',
-            unsafe_allow_html=True,
-        )
-        col1, col2 = st.columns(2)
-        with col1:
-            weekly_hours = st.number_input("Weekly Learning Hours", min_value=1, max_value=80, value=10)
-        with col2:
-            timeline_weeks = st.number_input("Target Timeline (weeks)", min_value=1, max_value=104, value=24)
-        preferred_learning_style = st.selectbox(
-            "Preferred Learning Style",
-            options=["visual", "reading", "hands-on", "video", "mixed"],
-        )
+    with st.form("profile_form"):
+        with st.container(border=True):
+            st.subheader("01 · Your destination")
+            st.caption("Where do you want this learning journey to take you?")
+            name = st.text_input("Your name", placeholder="e.g. Akshaya Reddy")
+            goal = st.selectbox("Career goal", career_options())
+            natural = st.text_area(
+                "Describe your goal in your own words",
+                placeholder="I want to become an ML engineer and prepare for internships.",
+            )
 
         st.write("")
-        submitted = st.form_submit_button("Generate My Learning Path →")
-
-    if submitted:
-        if not name.strip():
-            st.error("Please enter your name.")
-            return
-
-        current_skills = [s.strip() for s in current_skills_raw.split(",") if s.strip()]
-        interests = [s.strip() for s in interests_raw.split(",") if s.strip()]
-
-        try:
-            profile = LearnerProfile(
-                name=name.strip(),
-                career_goal=career_goal,
-                natural_language_goal=natural_language_goal.strip(),
-                experience_level=experience_map[experience_level_label],
-                current_skills=current_skills,
-                interests=interests,
-                completed_courses=[],
-                weekly_hours=int(weekly_hours),
-                timeline_weeks=int(timeline_weeks),
-                preferred_learning_style=preferred_learning_style,
+        with st.container(border=True):
+            st.subheader("02 · Your current position")
+            level = st.select_slider(
+                "Experience level",
+                ["Beginner", "Intermediate", "Advanced"],
+                value="Beginner",
             )
-        except Exception as e:
-            st.error(f"Could not build your profile: {e}")
+            skills = st.text_input("Current skills", placeholder="Python, SQL, Git")
+            interests = st.text_input("Interests", placeholder="AI, Data, Web Development")
+
+        st.write("")
+        with st.container(border=True):
+            st.subheader("03 · Your learning reality")
+            left, right = st.columns(2)
+            with left:
+                hours = st.number_input("Hours available each week", 1, 80, 10)
+            with right:
+                weeks = st.number_input("Target timeline (weeks)", 1, 104, 24)
+            style = st.selectbox(
+                "Preferred learning style",
+                ["visual", "reading", "hands-on", "video", "mixed"],
+            )
+            submit = st.form_submit_button(
+                "Generate My Intelligence Path  →",
+                type="primary",
+                use_container_width=True,
+            )
+
+    if submit:
+        if not name.strip():
+            st.error("Please enter your name before continuing.")
             return
+
+        profile = LearnerProfile(
+            name=name.strip(),
+            career_goal=goal,
+            natural_language_goal=natural.strip(),
+            experience_level={"Beginner": 1, "Intermediate": 3, "Advanced": 5}[level],
+            current_skills=[s.strip() for s in skills.split(",") if s.strip()],
+            interests=[s.strip() for s in interests.split(",") if s.strip()],
+            completed_courses=[],
+            weekly_hours=int(hours),
+            timeline_weeks=int(weeks),
+            preferred_learning_style=style,
+        )
 
         st.session_state.profile = profile
-
-        if engine is None:
-            st.error("Intelligence engine is unavailable. Please check the data files.")
-            return
-
-        with st.spinner("Analyzing your profile..."):
-            run_engine_pipeline(profile)
-
+        with st.spinner("PathPilot is analysing your learning profile..."):
+            run_pipeline(profile, engine)
         st.session_state.stage = "app"
         st.rerun()
 
-    if st.button("← Back"):
-        st.session_state.stage = "welcome"
-        st.rerun()
 
+def next_action(adaptive_engine, assistant):
+    output = st.session_state.engine_output or {}
+    nba = output.get("next_best_action") or {}
 
-# ----------------------------------------------------------------------
-# NEXT BEST ACTION SECTION
-# ----------------------------------------------------------------------
-def render_next_best_action():
-    st.markdown('<div class="pp-eyebrow">DECISION ENGINE</div><h2 class="pp-section-title">Next Best Action</h2>', unsafe_allow_html=True)
-
-    engine_output = st.session_state.engine_output or {}
-    nba = engine_output.get("next_best_action")
-
-    if not nba:
-        st.markdown(
-            '<div class="pp-card">You\'re caught up — no further recommendation right now for your current goal.</div>',
-            unsafe_allow_html=True,
-        )
-        return
-
-    reasons = nba.get("reasons", [])
-    reasons_html = "".join(
-        f'<div class="pp-insight-row"><span class="pp-insight-check">✓</span>'
-        f'<span class="pp-insight-text">{r}</span></div>'
-        for r in reasons
-    ) or '<div class="pp-insight-text">No additional reasoning provided.</div>'
-
-    st.markdown(
-        f"""
-        <div class="pp-nba-card">
-            <div class="pp-nba-eyebrow">PathPilot's Decision</div>
-            <div class="pp-nba-skill">Learn: {nba.get('skill', 'N/A')}</div>
-            <div class="pp-nba-stats">
-                <div><div class="pp-nba-stat-label">Confidence Score</div><div class="pp-nba-stat-value">{nba.get('score', 'N/A')}</div></div>
-                <div><div class="pp-nba-stat-label">Estimated Time</div><div class="pp-nba-stat-value">{nba.get('est_hours', 'N/A')} hrs</div></div>
-                <div><div class="pp-nba-stat-label">Difficulty</div><div class="pp-nba-stat-value">{nba.get('difficulty', 'N/A')}</div></div>
-            </div>
-            <div class="pp-nba-why">
-                <div class="pp-eyebrow">WHY THIS NOW?</div>
-                {reasons_html}
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    hero(
+        "Decision engine",
+        "Your next best action.",
+        "A focused recommendation selected from your profile, readiness and learning path.",
     )
 
-    breakdown = nba.get("score_breakdown", {})
-    if breakdown:
-        st.markdown('<div class="pp-card">', unsafe_allow_html=True)
-        st.markdown('<div class="pp-eyebrow">SCORE BREAKDOWN</div>', unsafe_allow_html=True)
-        rows_html = ""
-        for factor, value in breakdown.items():
-            try:
-                pct = max(0, min(100, float(value)))
-            except (TypeError, ValueError):
-                pct = 0
-            rows_html += f"""
-            <div class="pp-score-row">
-                <div class="pp-score-top">
-                    <span class="pp-score-name">{str(factor).replace('_', ' ').title()}</span>
-                    <span class="pp-score-num">{value}</span>
-                </div>
-                <div class="pp-score-track"><div class="pp-score-fill" style="width:{pct}%;"></div></div>
-            </div>
-            """
-        st.markdown(rows_html, unsafe_allow_html=True)
-        st.markdown('</div>', unsafe_allow_html=True)
+    if not isinstance(nba, dict) or not nba:
+        st.info("No recommendation is available yet. Try regenerating your learning path.")
+        return
 
-    render_adaptive_feedback(nba)
+    skill = nba.get("skill") or nba.get("title") or nba.get("name") or "Your next step"
+    reasons = nba.get("reasons") or nba.get("reason") or []
+    if isinstance(reasons, str):
+        reasons = [reasons]
 
-    if assistant:
-        with st.expander("AI Explanation", expanded=False):
-            with st.spinner("Generating explanation..."):
-                explanation = safe_call(assistant.explain_next_best_action, st.session_state.profile, nba)
-            st.write(explanation or "Explanation unavailable right now.")
+    with st.container(border=True):
+        st.subheader(str(skill))
+        st.caption("PATHPILOT'S RECOMMENDATION")
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Confidence", nba.get("score", "—"))
+        c2.metric("Estimated effort", f"{nba.get('est_hours', '—')} hrs")
+        c3.metric("Difficulty", nba.get("difficulty", "—"))
 
+        st.divider()
+        st.markdown("**Why this, why now?**")
+        if reasons:
+            for reason in reasons:
+                st.write(f"✓  {reason}")
+        else:
+            st.write("This step was selected from your current profile and learning path.")
 
-def render_adaptive_feedback(nba):
-    st.markdown('<p style="color:var(--text-muted); font-size:0.86rem; margin:1.3rem 0 0.5rem 0;">Does this recommendation feel right?</p>', unsafe_allow_html=True)
-    col1, col2, col3 = st.columns(3)
-    skill_name = nba.get("skill")
+    st.write("")
+    with st.container(border=True):
+        st.subheader("Does this recommendation feel right?")
+        st.caption("Your feedback helps the adaptive engine adjust future recommendations.")
+        a, b, c = st.columns(3)
+        choice = None
+        with a:
+            if st.button("Too easy", use_container_width=True):
+                choice = "too_easy"
+        with b:
+            if st.button("Appropriate", type="primary", use_container_width=True):
+                choice = "appropriate"
+        with c:
+            if st.button("Too difficult", use_container_width=True):
+                choice = "too_difficult"
 
-    feedback_clicked = None
-    with col1:
-        if st.button("Too Easy", use_container_width=True):
-            feedback_clicked = "too_easy"
-    with col2:
-        if st.button("Appropriate", use_container_width=True):
-            feedback_clicked = "appropriate"
-    with col3:
-        if st.button("Too Difficult", use_container_width=True):
-            feedback_clicked = "too_difficult"
-
-    if feedback_clicked and adaptive_engine and skill_name:
-        with st.spinner("Adapting your path..."):
+        if choice:
             result = safe_call(
-                adaptive_engine.apply_feedback,
+                getattr(adaptive_engine, "apply_feedback", None),
                 st.session_state.profile,
-                skill_name,
-                feedback_clicked,
+                skill,
+                choice,
                 st.session_state.adaptation_state,
             )
+            if isinstance(result, dict):
+                if result.get("updated_recommendation") is not None:
+                    output["next_best_action"] = result["updated_recommendation"]
+                if result.get("updated_path_health") is not None:
+                    output["path_health"] = result["updated_path_health"]
+                if result.get("updated_risks") is not None:
+                    output["risks"] = result["updated_risks"]
+                st.session_state.engine_output = output
+                st.success(result.get("adaptation_message", "Your path was updated."))
+                st.rerun()
+            else:
+                st.info("Feedback recorded for the next recommendation cycle.")
 
-        if result:
-            st.success("Your learning path has been adapted based on your feedback.")
-            st.info(result.get("adaptation_message", ""))
-
-            if result.get("root_blockers"):
-                st.warning(f"Root blockers identified: {', '.join(result['root_blockers'])}")
-
-            engine_output = st.session_state.engine_output or {}
-            if result.get("updated_recommendation") is not None:
-                engine_output["next_best_action"] = result["updated_recommendation"]
-            if result.get("updated_path_health") is not None:
-                engine_output["path_health"] = result["updated_path_health"]
-            if result.get("updated_risks") is not None:
-                engine_output["risks"] = result["updated_risks"]
-            st.session_state.engine_output = engine_output
-            st.rerun()
+    if assistant:
+        with st.expander("Why did PathPilot choose this?"):
+            answer = safe_call(
+                getattr(assistant, "explain_next_best_action", None),
+                st.session_state.profile,
+                nba,
+            )
+            st.write(answer or "Explanation is unavailable right now.")
 
 
-# ----------------------------------------------------------------------
-# AI ASSISTANT SECTION
-# ----------------------------------------------------------------------
-def render_ai_assistant():
-    st.markdown(
-        '<div class="pp-eyebrow">PATH INTELLIGENCE ASSISTANT</div>'
-        '<h2 class="pp-section-title" style="margin-bottom:0.2rem;">Ask about your learning path</h2>'
-        '<p style="color:var(--text-muted); margin-top:0; margin-bottom:1.3rem;">'
-        'Understand your recommendations, roadmap, blockers and progress.</p>',
-        unsafe_allow_html=True,
+def health_page():
+    output = st.session_state.engine_output or {}
+    health = output.get("path_health") or {}
+    risks = output.get("risks") or []
+
+    hero(
+        "Diagnostics",
+        "Path health.",
+        "A quick diagnostic view of how sustainable and achievable your current path is.",
     )
 
-    engine_output = st.session_state.engine_output or {}
-    profile = st.session_state.profile
+    score = health.get("health_score", "—") if isinstance(health, dict) else "—"
+    status = health.get("status", "Unknown") if isinstance(health, dict) else "Unknown"
 
-    if not assistant:
-        st.error("AI assistant unavailable.")
+    c1, c2 = st.columns([1, 2])
+    with c1:
+        with st.container(border=True):
+            st.metric("Path health", f"{score}/100")
+            st.write(f"**{status}**")
+    with c2:
+        with st.container(border=True):
+            st.subheader("What is influencing your path?")
+            factors = health.get("contributing_factors", []) if isinstance(health, dict) else []
+            if factors:
+                for factor in factors:
+                    st.write(f"✓  {factor}")
+            else:
+                st.caption("No detailed factors are available yet.")
+
+    st.write("")
+    st.subheader("Detected risks")
+    if not risks:
+        st.success("No active risks detected.")
         return
 
-    nba = engine_output.get("next_best_action")
-    if nba:
-        with st.spinner("Preparing explanation..."):
-            auto_explanation = safe_call(assistant.explain_next_best_action, profile, nba)
-        st.markdown(
-            '<div class="pp-card"><div class="pp-eyebrow">WHY YOUR NEXT STEP IS RECOMMENDED</div>'
-            f'<p style="color:var(--text-secondary); font-size:0.91rem; margin-top:6px; margin-bottom:0; line-height:1.55;">{auto_explanation or "Explanation unavailable right now."}</p></div>',
-            unsafe_allow_html=True,
-        )
-        st.write("")
+    for risk in risks:
+        with st.container(border=True):
+            if isinstance(risk, dict):
+                title = risk.get("title") or risk.get("type") or "Learning risk"
+                st.markdown(f"**{title}**")
+                if risk.get("message"):
+                    st.write(risk["message"])
+                if risk.get("suggested_action") or risk.get("action"):
+                    st.caption(
+                        f"Recommended action: {risk.get('suggested_action') or risk.get('action')}"
+                    )
+            else:
+                st.write(str(risk))
 
-    if st.session_state.assistant_question is None:
-        st.session_state.assistant_question = ""
 
-    typed_question = st.text_input(
-        "Ask about your learning path...",
-        value=st.session_state.assistant_question,
-        placeholder="e.g. What should I learn next? What is blocking my progress?",
-        label_visibility="collapsed",
-        key="assistant_question_box",
+def assistant_page(assistant):
+    profile = st.session_state.profile
+    output = st.session_state.engine_output or {}
+
+    hero(
+        "Path intelligence",
+        "Ask about your learning path.",
+        "Get explanations grounded in your recommendation, roadmap and progress.",
     )
-    if typed_question != st.session_state.assistant_question:
-        st.session_state.assistant_question = typed_question
 
-    examples = [
+    prompts = [
         "What should I learn next?",
         "What is blocking my progress?",
         "How can I improve my path?",
         "Which skill has the highest impact?",
     ]
-    example_cols = st.columns(4)
-    for col, ex in zip(example_cols, examples):
-        with col:
-            if st.button(ex, use_container_width=True, key=f"chip_{ex}"):
-                st.session_state.assistant_question = ex
-                st.rerun()
 
-    question = st.session_state.assistant_question
+    for col, prompt in zip(st.columns(4), prompts):
+        with col:
+            if st.button(prompt, use_container_width=True, key=f"quick_{prompt}"):
+                st.session_state.assistant_question = prompt
+
+    question = st.text_input(
+        "Ask PathPilot",
+        value=st.session_state.assistant_question,
+        placeholder="Ask something about your path...",
+    )
+    st.session_state.assistant_question = question
 
     if question:
-        with st.spinner("Thinking..."):
-            answer = safe_call(assistant.answer_path_question, profile, engine_output, question)
-        st.markdown(
-            '<div class="pp-assistant-answer">'
-            '<div class="pp-eyebrow">INSIGHT</div>'
-            f'<p style="color:var(--text-primary); font-size:0.92rem; margin-top:6px; margin-bottom:0; line-height:1.6;">{answer or "I couldn\'t generate an answer right now."}</p></div>',
-            unsafe_allow_html=True,
+        answer = safe_call(
+            getattr(assistant, "answer_path_question", None) if assistant else None,
+            profile,
+            output,
+            question,
         )
+        with st.container(border=True):
+            st.caption("PATHPILOT INSIGHT")
+            st.write(answer or "I could not generate an answer right now.")
 
 
-# ----------------------------------------------------------------------
-# MAIN APP SHELL
-# ----------------------------------------------------------------------
-def render_app():
+def app_shell(adaptive_engine, assistant):
     profile = st.session_state.profile
-    engine_output = st.session_state.engine_output
+    output = st.session_state.engine_output
 
-    if profile is None or engine_output is None:
-        st.warning("No learner profile found. Please build your path first.")
-        if st.button("← Go to Profiling"):
-            st.session_state.stage = "profiling"
-            st.rerun()
-        return
+    if profile is None or output is None:
+        st.session_state.stage = "profiling"
+        st.rerun()
 
     with st.sidebar:
         st.markdown(
-            '<div class="pp-brand"><div class="pp-brand-mark">◆</div>'
-            '<div class="pp-brand-name">PathPilot</div></div>'
-            '<div class="pp-brand-sub">Intelligent learning paths</div>',
+            '<div><span class="pp-brand-dot">✦</span><span class="pp-brand">PathPilot</span></div>',
             unsafe_allow_html=True,
         )
+        st.caption("Learning intelligence workspace")
+        st.write("")
 
-        nav_options = ["Overview", "Next Action", "Learning Roadmap", "Path Health", "AI Assistant"]
-        current_index = nav_options.index(st.session_state.nav_section) if st.session_state.nav_section in nav_options else 0
-        section = st.radio("Navigate", nav_options, index=current_index, label_visibility="collapsed")
+        options = ["Overview", "Next Action", "Learning Roadmap", "Path Health", "AI Assistant"]
+        current = st.session_state.nav_section
+        if current not in options:
+            current = options[0]
+        section = st.radio(
+            "Navigate",
+            options,
+            index=options.index(current),
+            label_visibility="collapsed",
+        )
         st.session_state.nav_section = section
 
-        st.markdown(
-            f"""
-            <div class="pp-user-card">
-                <div class="pp-user-name">{getattr(profile, 'name', 'Learner')}</div>
-                <div class="pp-user-role">{getattr(profile, 'career_goal', 'N/A')}</div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        st.write("")
-        if st.button("Restart Journey", use_container_width=True):
-            for key in ["stage", "profile", "engine_output", "adaptation_state", "roadmap_progress", "nav_section", "assistant_question"]:
-                st.session_state.pop(key, None)
-            init_session_state()
+        st.divider()
+        st.markdown(f"**{getattr(profile, 'name', 'Learner')}**")
+        st.caption(str(getattr(profile, "career_goal", "Learning path")))
+
+        if st.button("Restart journey", use_container_width=True):
+            for key in list(st.session_state.keys()):
+                if key in {
+                    "stage", "profile", "engine_output", "adaptation_state",
+                    "roadmap_progress", "nav_section", "assistant_question"
+                }:
+                    del st.session_state[key]
+            init_state()
             st.rerun()
 
-    health = (engine_output.get("path_health") or {})
-    status = health.get("status", "Unknown")
-    score = health.get("health_score", "—")
-
-    st.markdown(
-        f"""
-        <div class="pp-page-header">
-            <div>
-                <h1>Good to see you, {getattr(profile, 'name', 'there')}</h1>
-                <p>Your learning path, at a glance — continuously analyzed based on your skills, goals and progress.</p>
-            </div>
-            <div class="pp-status-chip">
-                <div class="pp-status-label">Path Status</div>
-                <div class="pp-status-value">{status}</div>
-                <div class="pp-status-sub">{score} / 100</div>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
     if section == "Overview":
-        render_dashboard(profile, engine_output, safe_call, engine)
+        render_dashboard(profile, output)
     elif section == "Next Action":
-        render_next_best_action()
+        next_action(adaptive_engine, assistant)
     elif section == "Learning Roadmap":
-        render_roadmap(profile, engine_output, safe_call)
+        render_roadmap(profile, output)
     elif section == "Path Health":
-        render_path_health(engine_output)
-    elif section == "AI Assistant":
-        render_ai_assistant()
-
-
-def render_path_health(engine_output):
-    st.markdown('<div class="pp-eyebrow">DIAGNOSTICS</div><h2 class="pp-section-title">Path Health</h2>', unsafe_allow_html=True)
-    health = engine_output.get("path_health") or {}
-    risks = engine_output.get("risks") or []
-
-    if not health:
-        st.markdown('<div class="pp-card">Path health data unavailable.</div>', unsafe_allow_html=True)
-        return
-
-    status = health.get("status", "Unknown")
-    score = health.get("health_score", 0)
-    try:
-        score_num = float(score)
-    except (TypeError, ValueError):
-        score_num = 0
-
-    gauge_col, factor_col = st.columns([1, 1.4])
-
-    with gauge_col:
-        try:
-            import plotly.graph_objects as go
-            gauge_color = {"Healthy": "#16A34A", "At Risk": "#D97706", "Needs Attention": "#D97706", "Critical": "#DC2626"}.get(status, "#5B5CE2")
-            fig = go.Figure(go.Indicator(
-                mode="gauge+number",
-                value=score_num,
-                number={"font": {"size": 36, "color": "#171A2B", "family": "JetBrains Mono"}},
-                gauge={
-                    "axis": {"range": [0, 100], "tickcolor": "#9B9EAD", "tickfont": {"color": "#9B9EAD"}},
-                    "bar": {"color": gauge_color},
-                    "bgcolor": "#FFFFFF",
-                    "borderwidth": 0,
-                    "steps": [
-                        {"range": [0, 40], "color": "rgba(220,38,38,0.08)"},
-                        {"range": [40, 70], "color": "rgba(217,119,6,0.08)"},
-                        {"range": [70, 100], "color": "rgba(22,163,74,0.08)"},
-                    ],
-                },
-                domain={"x": [0, 1], "y": [0, 1]},
-            ))
-            fig.update_layout(
-                height=220, margin=dict(l=20, r=20, t=20, b=10),
-                paper_bgcolor="rgba(0,0,0,0)", font_color="#171A2B",
-            )
-            st.plotly_chart(fig, use_container_width=True)
-        except Exception:
-            st.metric("Health Score", score)
-
-        badge_class = status_badge_class(status)
-        st.markdown(f'<div style="text-align:center;"><span class="pp-badge {badge_class}">{status}</span></div>', unsafe_allow_html=True)
-
-    with factor_col:
-        st.markdown('<div class="pp-eyebrow">CONTRIBUTING FACTORS</div>', unsafe_allow_html=True)
-        factors = health.get("contributing_factors", [])
-        if factors:
-            for f in factors:
-                text = str(f)
-                icon = "⚠" if any(w in text.lower() for w in ["risk", "tight", "gap", "missing", "low"]) else "✓"
-                color = "var(--warning)" if icon == "⚠" else "var(--success)"
-                st.markdown(
-                    f'<div class="pp-insight-row"><span style="color:{color};">{icon}</span>'
-                    f'<span class="pp-insight-text">{text}</span></div>',
-                    unsafe_allow_html=True,
-                )
-        else:
-            st.markdown('<p style="color:var(--text-faint);">No contributing factors reported.</p>', unsafe_allow_html=True)
-
-    st.write("")
-    st.markdown('<div class="pp-eyebrow">DETECTED RISKS</div>', unsafe_allow_html=True)
-    if not risks:
-        st.markdown('<div class="pp-card">No active risks detected.</div>', unsafe_allow_html=True)
+        health_page()
     else:
-        for risk in risks:
-            if isinstance(risk, dict):
-                severity = str(risk.get("severity", "low")).lower()
-                sev_class = {"high": "pp-risk-high", "medium": "pp-risk-medium"}.get(severity, "pp-risk-low")
-                message = risk.get("message", "")
-                title = risk.get("title") or risk.get("type") or "Risk"
-                action = risk.get("suggested_action") or risk.get("action")
-                st.markdown(
-                    f"""
-                    <div class="pp-risk-card {sev_class}">
-                        <div class="pp-risk-severity">{severity.upper()} PRIORITY</div>
-                        <div class="pp-risk-title">{title}</div>
-                        <div class="pp-risk-msg">{message}</div>
-                        {f'<div class="pp-risk-action"><b>Recommended Action:</b> {action}</div>' if action else ''}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.markdown(f'<div class="pp-risk-card">{risk}</div>', unsafe_allow_html=True)
-
-    if assistant:
-        with st.expander("AI Explanation", expanded=False):
-            with st.spinner("Generating explanation..."):
-                explanation = safe_call(assistant.explain_path_health, st.session_state.profile, health, risks)
-            st.write(explanation or "Explanation unavailable right now.")
+        assistant_page(assistant)
 
 
-# ----------------------------------------------------------------------
-# ROUTER
-# ----------------------------------------------------------------------
-stage = st.session_state.stage
+try:
+    engine = get_engine()
+    assistant = get_assistant()
+    adaptive_engine = AdaptiveEngine(engine)
+except Exception as exc:
+    st.error(f"PathPilot could not initialise its intelligence layer: {exc}")
+    st.stop()
 
-if stage == "welcome":
-    render_welcome()
-elif stage == "profiling":
-    render_profiling()
+if st.session_state.stage == "welcome":
+    welcome()
+elif st.session_state.stage == "profiling":
+    profiling(engine)
 else:
-    render_app()
+    app_shell(adaptive_engine, assistant)
