@@ -16,25 +16,42 @@ def _items(roadmap):
         return roadmap
     if isinstance(roadmap, dict):
         for key in ("phases", "roadmap", "steps", "milestones", "learning_path"):
-            if isinstance(roadmap.get(key), list):
-                return roadmap[key]
+            value = roadmap.get(key)
+            if isinstance(value, list):
+                return value
     return []
 
 
 def _as_list(value):
     if value is None:
         return []
-    if isinstance(value, list):
-        return value
+    if isinstance(value, (list, tuple, set)):
+        return list(value)
     return [value]
 
 
 def _title(item, index):
     if isinstance(item, dict):
-        return str(
-            _pick(item, "title", "skill", "name", "phase", "milestone", default=f"Milestone {index + 1}")
-        )
+        return str(_pick(
+            item,
+            "title", "skill", "name", "phase", "milestone",
+            default=f"Milestone {index + 1}",
+        ))
     return str(item)
+
+
+def _resource_text(resource):
+    if isinstance(resource, dict):
+        return str(_pick(resource, "title", "name", "resource", default="Resource"))
+    return str(resource)
+
+
+def _completed_indices(total, progress_state):
+    return {
+        i for i in range(total)
+        if progress_state.get(f"roadmap_{i}") is True
+        or progress_state.get(f"roadmap_{i}") == "completed"
+    }
 
 
 def render_roadmap(profile, output):
@@ -46,105 +63,99 @@ def render_roadmap(profile, output):
         <div class="pp-kicker">Personalised path generator</div>
         <div class="pp-title">Your learning roadmap.</div>
         <div class="pp-subtitle">
-            A structured sequence of milestones designed around prerequisites, skill gaps,
-            learning capacity and your career objective.
+            A prerequisite-aware sequence of milestones designed around your skill gaps,
+            learning capacity and career objective.
         </div>
         """,
         unsafe_allow_html=True,
     )
 
     if not roadmap:
-        st.info(
-            "Your roadmap is being prepared. Generate the learning path again if no milestones appear."
-        )
+        st.info("Your roadmap is not available yet. Generate the learning path again to create your milestones.")
         return
 
     progress_state = st.session_state.setdefault("roadmap_progress", {})
-
-    completed_count = sum(
-        1
-        for index in range(len(roadmap))
-        if progress_state.get(f"roadmap_{index}") is True
-    )
+    completed_indices = _completed_indices(len(roadmap), progress_state)
+    completed_count = len(completed_indices)
     progress = completed_count / len(roadmap)
+    next_index = next((i for i in range(len(roadmap)) if i not in completed_indices), None)
 
     st.write("")
     with st.container(border=True):
-        a, b, c = st.columns([1.3, 1, 1])
+        a, b, c = st.columns([1.45, .8, 1.15], gap="large")
         with a:
             st.caption("JOURNEY PROGRESS")
             st.subheader(f"{completed_count} of {len(roadmap)} milestones completed")
             st.progress(progress)
+            if next_index is not None:
+                st.caption(f"Next up: Milestone {next_index + 1}")
+            else:
+                st.success("Roadmap complete 🎉")
         with b:
             st.metric("Completion", f"{round(progress * 100)}%")
         with c:
-            st.metric("Goal", str(getattr(profile, "career_goal", "Personalised path")))
+            st.metric("Milestones", len(roadmap))
 
     st.write("")
     st.caption("MILESTONE JOURNEY")
 
     for index, item in enumerate(roadmap):
         key = f"roadmap_{index}"
-        done = progress_state.get(key, False)
+        done = index in completed_indices
+        is_next = index == next_index
         title = _title(item, index)
 
         if done:
-            label = f"✓  {index + 1:02d} · {title}"
-        elif index == completed_count:
-            label = f"✦  {index + 1:02d} · {title}"
+            marker = "✓"
+            state_text = "COMPLETED"
+        elif is_next:
+            marker = "✦"
+            state_text = "UP NEXT"
         else:
-            label = f"○  {index + 1:02d} · {title}"
+            marker = "○"
+            state_text = "UPCOMING"
 
         with st.container(border=True):
-            top_left, top_right = st.columns([4, 1])
+            top_left, top_right = st.columns([4.2, 1], gap="large")
             with top_left:
-                st.subheader(label)
+                st.caption(f"{marker}  MILESTONE {index + 1:02d} · {state_text}")
+                st.subheader(title)
 
                 if isinstance(item, dict):
-                    description = _pick(
-                        item,
-                        "description",
-                        "summary",
-                        "objective",
-                        "details",
-                        default=None,
-                    )
+                    description = _pick(item, "description", "summary", "objective", "details")
                     if description:
                         st.write(str(description))
 
-                    prerequisites = _as_list(
-                        _pick(item, "prerequisites", "prerequisite", default=[])
-                    )
-                    resources = _as_list(
-                        _pick(item, "resources", "learning_resources", default=[])
-                    )
-                    project = _pick(item, "project", "project_idea", "assessment", default=None)
-
+                    difficulty = _pick(item, "difficulty", "level")
+                    duration = _pick(item, "duration", "estimated_time", "estimated_hours", "hours")
                     meta = []
-                    difficulty = _pick(item, "difficulty", "level", default=None)
-                    duration = _pick(
-                        item, "duration", "estimated_time", "estimated_hours", "hours", default=None
-                    )
                     if difficulty:
-                        meta.append(f"Difficulty: {difficulty}")
+                        meta.append(f"Difficulty · {difficulty}")
                     if duration:
-                        meta.append(f"Estimated effort: {duration}")
+                        meta.append(f"Estimated effort · {duration}")
                     if meta:
-                        st.caption(" · ".join(map(str, meta)))
+                        st.caption("  •  ".join(map(str, meta)))
+
+                    prerequisites = _as_list(_pick(item, "prerequisites", "prerequisite", default=[]))
+                    resources = _as_list(_pick(item, "resources", "learning_resources", default=[]))
+                    project = _pick(item, "project", "project_idea", "assessment")
 
                     if prerequisites:
                         with st.expander("Prerequisites"):
                             for prereq in prerequisites:
-                                st.write(f"• {prereq}")
+                                if isinstance(prereq, dict):
+                                    st.write(f"• {_pick(prereq, 'title', 'skill', 'name', default=str(prereq))}")
+                                else:
+                                    st.write(f"• {prereq}")
 
                     if resources:
                         with st.expander("Recommended learning resources"):
                             for resource in resources:
                                 if isinstance(resource, dict):
-                                    name = _pick(resource, "title", "name", "resource", default="Resource")
-                                    link = _pick(resource, "url", "link", default=None)
+                                    name = _resource_text(resource)
+                                    link = _pick(resource, "url", "link")
                                     if link:
-                                        st.markdown(f"- [{name}]({link})")
+                                        st.markdown(f"• [{name}]({link})")
                                     else:
                                         st.write(f"• {name}")
                                 else:
@@ -155,12 +166,19 @@ def render_roadmap(profile, output):
                         st.write(str(project))
 
             with top_right:
-                button_label = "Completed ✓" if done else "Mark complete"
+                st.write("")
+                if done:
+                    button_label = "Completed ✓"
+                    button_type = "secondary"
+                else:
+                    button_label = "Mark complete"
+                    button_type = "primary" if is_next else "secondary"
+
                 if st.button(
                     button_label,
                     key=f"complete_button_{index}",
                     use_container_width=True,
-                    type="primary" if not done else "secondary",
+                    type=button_type,
                 ):
                     progress_state[key] = not done
                     st.session_state.roadmap_progress = progress_state
@@ -169,8 +187,8 @@ def render_roadmap(profile, output):
     st.write("")
     with st.container(border=True):
         st.caption("ADAPTIVE LEARNING")
-        st.subheader("Your roadmap is not static.")
+        st.subheader("Your roadmap can evolve with you.")
         st.write(
-            "As you complete milestones and provide feedback, PathPilot can use your progress "
-            "signals to adjust future recommendations and keep the path aligned with your needs."
+            "As you complete milestones and provide feedback, PathPilot can use those progress "
+            "signals to keep future recommendations aligned with your pace and goals."
         )
