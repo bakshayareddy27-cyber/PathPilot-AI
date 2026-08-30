@@ -111,7 +111,6 @@ def _render_stage(idx, step, is_last):
 
     is_current = current_status == "In Progress"
     is_completed = current_status == "Completed"
-    is_upcoming = current_status == "Not Started"
 
     if is_current:
         stage_class = "pp-stage pp-stage-current"
@@ -212,28 +211,30 @@ def _inject_roadmap_styles():
         <style>
         .pp-roadmap-summary {
             display: flex; align-items: center; gap: 0;
-            background: var(--surface-raised); border: 1px solid var(--border);
+            background: var(--surface); border: 1px solid var(--border);
             border-radius: var(--radius-md) var(--radius-md) 0 0;
-            padding: 1.1rem 1.4rem;
+            padding: 1.15rem 1.45rem;
+            box-shadow: var(--shadow-sm);
         }
         .pp-roadmap-summary-item { flex: 1; }
-        .pp-roadmap-summary-value { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 600; color: var(--text-primary); }
-        .pp-roadmap-summary-label { color: var(--text-faint); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; }
+        .pp-roadmap-summary-value { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
+        .pp-roadmap-summary-label { color: var(--text-faint); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; font-weight: 600; }
         .pp-roadmap-summary-divider { width: 1px; height: 30px; background: var(--border); margin: 0 1.2rem; }
-        .pp-roadmap-track { height: 3px; background: var(--surface-elevated); border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; margin-bottom: 1.4rem; border: 1px solid var(--border); border-top: none; }
-        .pp-roadmap-track-fill { height: 100%; background: var(--accent); transition: width 0.3s ease; }
+        .pp-roadmap-track { height: 4px; background: var(--surface-sunken); border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; margin-bottom: 1.4rem; border: 1px solid var(--border); border-top: none; }
+        .pp-roadmap-track-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); transition: width 0.35s ease; }
 
         .pp-rail { display: flex; flex-direction: column; align-items: center; }
         .pp-rail-node {
-            width: 28px; height: 28px; border-radius: 50%;
+            width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            font-family: var(--font-mono); font-size: 0.76rem; font-weight: 700;
+            font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
             border: 2px solid var(--text-faint); color: var(--text-faint);
-            background: var(--bg); flex-shrink: 0;
+            background: var(--surface); flex-shrink: 0;
         }
         .pp-node-inprogress {
             border-color: var(--accent); color: var(--accent);
             background: var(--accent-soft);
+            box-shadow: 0 0 0 4px var(--accent-soft);
         }
         .pp-node-completed {
             border-color: var(--success); color: var(--success);
@@ -245,43 +246,46 @@ def _inject_roadmap_styles():
         }
 
         .pp-stage {
-            background: var(--surface-raised);
+            background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
-            padding: 1.15rem 1.35rem;
+            padding: 1.2rem 1.4rem;
             margin-bottom: 0.95rem;
+            box-shadow: var(--shadow-sm);
+            transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
         }
+        .pp-stage:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
         .pp-stage-current {
             border-color: var(--accent-dim);
-            background: var(--surface-elevated);
+            background: linear-gradient(155deg, var(--accent-soft) 0%, var(--surface) 60%);
         }
-        .pp-stage-done { opacity: 0.82; }
-        .pp-stage-upcoming { opacity: 0.68; }
+        .pp-stage-done { opacity: 0.85; }
+        .pp-stage-upcoming { opacity: 0.72; }
 
         .pp-stage-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
         .pp-stage-index { font-family: var(--font-mono); color: var(--text-faint); font-size: 0.72rem; letter-spacing: 0.06em; }
         .pp-badge-soft {
-            font-family: var(--font-mono); font-size: 0.66rem; font-weight: 600;
-            padding: 0.18rem 0.6rem; border-radius: 999px; border: 1px solid;
+            font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700;
+            padding: 0.2rem 0.62rem; border-radius: 999px; border: 1px solid;
         }
         .pp-here-tag {
             font-family: var(--font-mono); font-size: 0.64rem; font-weight: 700;
-            color: var(--bg); background: var(--accent);
-            padding: 0.18rem 0.55rem; border-radius: 999px; letter-spacing: 0.05em;
+            color: #FFFFFF; background: var(--accent);
+            padding: 0.2rem 0.58rem; border-radius: 999px; letter-spacing: 0.05em;
         }
-        .pp-stage-title { font-family: var(--font-display); font-size: 1.12rem; font-weight: 700; margin-bottom: 6px; }
+        .pp-stage-title { font-family: var(--font-display); font-size: 1.14rem; font-weight: 700; margin-bottom: 6px; color: var(--text-primary); }
         .pp-stage-tags { margin-bottom: 0.85rem; }
         .pp-tag {
             display: inline-block; font-size: 0.73rem; color: var(--text-muted);
             background: var(--surface-elevated); border: 1px solid var(--border);
-            border-radius: 6px; padding: 0.17rem 0.5rem; margin-right: 6px;
+            border-radius: 6px; padding: 0.18rem 0.55rem; margin-right: 6px; font-weight: 500;
         }
         .pp-stage-block { margin-bottom: 0.65rem; }
         .pp-stage-block-label {
             font-size: 0.69rem; text-transform: uppercase; letter-spacing: 0.08em;
-            color: var(--text-faint); margin-bottom: 0.35rem; font-weight: 600;
+            color: var(--text-faint); margin-bottom: 0.35rem; font-weight: 700;
         }
-        .pp-chip-prereq { border-color: rgba(124,127,242,0.25); color: var(--text-secondary); }
+        .pp-chip-prereq { border-color: var(--accent-dim); color: var(--accent-dark); }
         </style>
         """,
         unsafe_allow_html=True,
