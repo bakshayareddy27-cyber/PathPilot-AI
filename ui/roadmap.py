@@ -33,7 +33,7 @@ def render_roadmap(profile, engine_output, safe_call):
     st.markdown('<div class="pp-eyebrow">YOUR JOURNEY</div>', unsafe_allow_html=True)
     st.markdown('<h2 class="pp-section-title" style="margin-bottom:0.3rem;">Learning Roadmap</h2>', unsafe_allow_html=True)
     st.markdown(
-        '<p style="color:var(--text-muted); font-size:0.89rem; margin-top:0; margin-bottom:1.3rem;">'
+        '<p style="color:var(--text-muted); font-size:0.9rem; margin-top:0; margin-bottom:1.3rem;">'
         'A structured path from your current skills to your goal.</p>',
         unsafe_allow_html=True,
     )
@@ -81,7 +81,7 @@ def _render_summary_strip(total, completed, current_skill):
             </div>
             <div class="pp-roadmap-summary-divider"></div>
             <div class="pp-roadmap-summary-item" style="flex:1.6;">
-                <div class="pp-roadmap-summary-value" style="font-size:1.02rem; font-family:var(--font-display);">{current_label}</div>
+                <div class="pp-roadmap-summary-value" style="font-size:1.05rem; font-family:var(--font-display);">{current_label}</div>
                 <div class="pp-roadmap-summary-label">Current Stage</div>
             </div>
         </div>
@@ -141,7 +141,7 @@ def _render_stage(idx, step, is_last):
             f"""
             <div class="pp-stage-top">
                 <span class="pp-stage-index">STAGE {idx:02d}</span>
-                <span class="pp-badge-soft" style="border-color:{meta['accent']}44; color:{meta['accent']};">{meta['label']}</span>
+                <span class="pp-badge-soft" style="border-color:{meta['accent']}; color:{meta['accent']};">{meta['label']}</span>
                 {here_tag}
             </div>
             <div class="pp-stage-title">{skill}</div>
@@ -163,7 +163,7 @@ def _render_stage(idx, step, is_last):
         else:
             st.markdown(
                 '<div class="pp-stage-block"><div class="pp-stage-block-label">Prerequisites</div>'
-                '<div class="pp-insight-text" style="font-size:0.82rem;">None — ready to start</div></div>',
+                '<div class="pp-insight-text" style="font-size:0.83rem;">None — ready to start</div></div>',
                 unsafe_allow_html=True,
             )
 
@@ -217,19 +217,20 @@ def _inject_roadmap_styles():
             box-shadow: var(--shadow-sm);
         }
         .pp-roadmap-summary-item { flex: 1; }
-        .pp-roadmap-summary-value { font-family: var(--font-mono); font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
+        .pp-roadmap-summary-value { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; color: var(--text-primary); }
         .pp-roadmap-summary-label { color: var(--text-faint); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.07em; margin-top: 3px; font-weight: 600; }
-        .pp-roadmap-summary-divider { width: 1px; height: 30px; background: var(--border); margin: 0 1.2rem; }
-        .pp-roadmap-track { height: 4px; background: var(--surface-sunken); border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; margin-bottom: 1.4rem; border: 1px solid var(--border); border-top: none; }
-        .pp-roadmap-track-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent-dark)); transition: width 0.35s ease; }
+        .pp-roadmap-summary-divider { width: 1px; height: 32px; background: var(--border); margin: 0 1.2rem; }
+        .pp-roadmap-track { height: 4px; background: var(--surface-sunken); border-radius: 0 0 var(--radius-md) var(--radius-md); overflow: hidden; margin-bottom: 1.5rem; border: 1px solid var(--border); border-top: none; }
+        .pp-roadmap-track-fill { height: 100%; background: var(--accent); transition: width 0.4s ease; }
 
         .pp-rail { display: flex; flex-direction: column; align-items: center; }
         .pp-rail-node {
             width: 30px; height: 30px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
             font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700;
-            border: 2px solid var(--text-faint); color: var(--text-faint);
+            border: 2px solid var(--border-strong); color: var(--text-faint);
             background: var(--surface); flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
         }
         .pp-node-inprogress {
             border-color: var(--accent); color: var(--accent);
@@ -241,7 +242,7 @@ def _inject_roadmap_styles():
             background: var(--success-soft);
         }
         .pp-rail-line {
-            width: 2px; flex: 1; min-height: 30px; margin: 6px 0;
+            width: 2px; flex: 1; min-height: 32px; margin: 6px 0;
             background: var(--border-strong);
         }
 
@@ -250,42 +251,44 @@ def _inject_roadmap_styles():
             border: 1px solid var(--border);
             border-radius: var(--radius-md);
             padding: 1.2rem 1.4rem;
-            margin-bottom: 0.95rem;
+            margin-bottom: 1rem;
             box-shadow: var(--shadow-sm);
-            transition: box-shadow 0.18s ease, transform 0.18s ease, border-color 0.18s ease;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
         }
         .pp-stage:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
         .pp-stage-current {
             border-color: var(--accent-dim);
-            background: linear-gradient(155deg, var(--accent-soft) 0%, var(--surface) 60%);
+            background: linear-gradient(160deg, var(--accent-soft) 0%, var(--surface) 60%);
+            box-shadow: var(--shadow-md);
         }
-        .pp-stage-done { opacity: 0.85; }
-        .pp-stage-upcoming { opacity: 0.72; }
+        .pp-stage-done { opacity: 0.88; }
+        .pp-stage-upcoming { opacity: 0.78; }
 
         .pp-stage-top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-        .pp-stage-index { font-family: var(--font-mono); color: var(--text-faint); font-size: 0.72rem; letter-spacing: 0.06em; }
+        .pp-stage-index { font-family: var(--font-mono); color: var(--text-faint); font-size: 0.72rem; letter-spacing: 0.06em; font-weight: 600; }
         .pp-badge-soft {
             font-family: var(--font-mono); font-size: 0.66rem; font-weight: 700;
-            padding: 0.2rem 0.62rem; border-radius: 999px; border: 1px solid;
+            padding: 0.19rem 0.62rem; border-radius: 999px; border: 1px solid;
+            background: var(--surface);
         }
         .pp-here-tag {
             font-family: var(--font-mono); font-size: 0.64rem; font-weight: 700;
-            color: #FFFFFF; background: var(--accent);
-            padding: 0.2rem 0.58rem; border-radius: 999px; letter-spacing: 0.05em;
+            color: #fff; background: var(--accent);
+            padding: 0.19rem 0.6rem; border-radius: 999px; letter-spacing: 0.04em;
         }
-        .pp-stage-title { font-family: var(--font-display); font-size: 1.14rem; font-weight: 700; margin-bottom: 6px; color: var(--text-primary); }
-        .pp-stage-tags { margin-bottom: 0.85rem; }
+        .pp-stage-title { font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; margin-bottom: 6px; color: var(--text-primary); }
+        .pp-stage-tags { margin-bottom: 0.9rem; }
         .pp-tag {
-            display: inline-block; font-size: 0.73rem; color: var(--text-muted);
-            background: var(--surface-elevated); border: 1px solid var(--border);
-            border-radius: 6px; padding: 0.18rem 0.55rem; margin-right: 6px; font-weight: 500;
+            display: inline-block; font-size: 0.74rem; color: var(--text-muted); font-weight: 500;
+            background: var(--surface-sunken); border: 1px solid var(--border);
+            border-radius: 6px; padding: 0.18rem 0.55rem; margin-right: 6px;
         }
-        .pp-stage-block { margin-bottom: 0.65rem; }
+        .pp-stage-block { margin-bottom: 0.7rem; }
         .pp-stage-block-label {
-            font-size: 0.69rem; text-transform: uppercase; letter-spacing: 0.08em;
-            color: var(--text-faint); margin-bottom: 0.35rem; font-weight: 700;
+            font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em;
+            color: var(--text-faint); margin-bottom: 0.4rem; font-weight: 700;
         }
-        .pp-chip-prereq { border-color: var(--accent-dim); color: var(--accent-dark); }
+        .pp-chip-prereq { border-color: var(--accent-dim); color: var(--text-secondary); }
         </style>
         """,
         unsafe_allow_html=True,
