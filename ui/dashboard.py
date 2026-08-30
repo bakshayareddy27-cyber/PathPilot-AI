@@ -26,7 +26,7 @@ def render_dashboard(profile, engine_output, safe_call, engine):
     health_status = health.get("status", "Unknown")
     missing_skills = _extract_missing_skills(skill_gap)
 
-    _render_metric_cards(readiness_score, health_score, health_status, len(missing_skills), len(risks))
+    _render_hero_and_supporting_metrics(readiness_score, health_score, health_status, len(missing_skills), len(risks))
 
     st.write("")
     col_left, col_right = st.columns([1, 1])
@@ -47,68 +47,94 @@ def render_dashboard(profile, engine_output, safe_call, engine):
     st.write("")
     st.markdown('<div class="pp-card">', unsafe_allow_html=True)
     st.markdown('<div class="pp-eyebrow">YOUR CURRENT POSITION</div>', unsafe_allow_html=True)
-    snap_col1, snap_col2 = st.columns(2)
+    snap_col1, snap_col2, snap_col3, snap_col4 = st.columns(4)
     with snap_col1:
-        st.markdown(
-            f'<p style="color:var(--text-muted); font-size:0.89rem; line-height:1.7;">'
-            f'<b style="color:var(--text-primary);">Career Goal</b><br>{getattr(profile, "career_goal", "N/A")}</p>'
-            f'<p style="color:var(--text-muted); font-size:0.89rem; line-height:1.7;">'
-            f'<b style="color:var(--text-primary);">Weekly Hours</b><br>{getattr(profile, "weekly_hours", "N/A")} hrs/week</p>',
-            unsafe_allow_html=True,
-        )
+        _render_position_field("Career Goal", getattr(profile, "career_goal", "N/A"))
     with snap_col2:
+        _render_position_field("Weekly Hours", f'{getattr(profile, "weekly_hours", "N/A")} hrs/wk')
+    with snap_col3:
+        _render_position_field("Timeline", f'{getattr(profile, "timeline_weeks", "N/A")} weeks')
+    with snap_col4:
         skills_text = ", ".join(getattr(profile, "current_skills", []) or []) or "None yet"
-        st.markdown(
-            f'<p style="color:var(--text-muted); font-size:0.89rem; line-height:1.7;">'
-            f'<b style="color:var(--text-primary);">Timeline</b><br>{getattr(profile, "timeline_weeks", "N/A")} weeks</p>'
-            f'<p style="color:var(--text-muted); font-size:0.89rem; line-height:1.7;">'
-            f'<b style="color:var(--text-primary);">Current Skills</b><br>{skills_text}</p>',
-            unsafe_allow_html=True,
-        )
+        _render_position_field("Current Skills", skills_text)
     st.markdown('</div>', unsafe_allow_html=True)
 
 
-def _render_metric_cards(readiness_score, health_score, health_status, missing_count, risk_count):
-    is_good_readiness = isinstance(readiness_score, (int, float)) and readiness_score >= 60
+def _render_position_field(label, value):
+    st.markdown(
+        f'<div style="margin-bottom:0.2rem;">'
+        f'<div style="font-size:0.7rem; color:var(--text-faint); text-transform:uppercase; '
+        f'letter-spacing:0.06em; font-weight:600; margin-bottom:4px;">{label}</div>'
+        f'<div style="font-size:0.9rem; color:var(--text-primary); font-weight:600; line-height:1.45;">{value}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
 
-    # Hero metric: readiness — given more visual weight than the rest.
-    hero_col, rest_col = st.columns([1.15, 2.4])
+
+def _render_hero_and_supporting_metrics(readiness_score, health_score, health_status, missing_count, risk_count):
+    """
+    Visual hierarchy: readiness is the hero metric (larger, tinted card, spans more width);
+    path health, missing skills and active risks are supporting metrics in a row beside it.
+    This intentionally avoids four identical cards.
+    """
+    is_good_readiness = isinstance(readiness_score, (int, float)) and readiness_score >= 60
+    readiness_display = f"{readiness_score}%" if readiness_score is not None else "—"
+    readiness_trend_class = "trend-good" if is_good_readiness else "trend-neutral"
+    readiness_desc = "On track" if is_good_readiness else "Building up"
+
+    health_trend_class = {"Healthy": "trend-good", "At Risk": "trend-warn", "Critical": "trend-bad"}.get(health_status, "trend-neutral")
+    risk_trend_class = "trend-bad" if risk_count > 0 else "trend-good"
+    risk_desc = "Needs attention" if risk_count > 0 else "All clear"
+
+    hero_col, supporting_col = st.columns([1.15, 2])
+
     with hero_col:
-        readiness_display = f"{readiness_score}%" if readiness_score is not None else "—"
-        readiness_desc = "Improving" if is_good_readiness else "Building up"
-        readiness_trend = "trend-good" if is_good_readiness else "trend-neutral"
         st.markdown(
             f"""
-            <div class="pp-metric-card hero">
+            <div class="pp-metric-card hero" style="height:100%;">
                 <div class="pp-metric-label">READINESS SCORE</div>
-                <div class="pp-metric-value" style="font-size:2.2rem;">{readiness_display}</div>
-                <div class="pp-metric-desc {readiness_trend}">{readiness_desc}</div>
+                <div class="pp-metric-value" style="font-size:2.6rem;">{readiness_display}</div>
+                <div class="pp-metric-desc {readiness_trend_class}">{readiness_desc}</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
 
-    with rest_col:
-        cards = [
-            ("Path Health", f"{health_score}", health_status,
-             {"Healthy": "trend-good", "At Risk": "trend-warn", "Critical": "trend-bad"}.get(health_status, "trend-neutral")),
-            ("Missing Skills", str(missing_count), "Skills remaining", "trend-neutral"),
-            ("Active Risks", str(risk_count), "Needs attention" if risk_count > 0 else "All clear",
-             "trend-bad" if risk_count > 0 else "trend-good"),
-        ]
-        cols = st.columns(3)
-        for col, (label, value, desc, trend_class) in zip(cols, cards):
-            with col:
-                st.markdown(
-                    f"""
-                    <div class="pp-metric-card">
-                        <div class="pp-metric-label">{label.upper()}</div>
-                        <div class="pp-metric-value">{value}</div>
-                        <div class="pp-metric-desc {trend_class}">{desc}</div>
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
+    with supporting_col:
+        s1, s2, s3 = st.columns(3)
+        with s1:
+            st.markdown(
+                f"""
+                <div class="pp-metric-card">
+                    <div class="pp-metric-label">Path Health</div>
+                    <div class="pp-metric-value">{health_score}</div>
+                    <div class="pp-metric-desc {health_trend_class}">{health_status}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with s2:
+            st.markdown(
+                f"""
+                <div class="pp-metric-card">
+                    <div class="pp-metric-label">Missing Skills</div>
+                    <div class="pp-metric-value">{missing_count}</div>
+                    <div class="pp-metric-desc trend-neutral">Skills remaining</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with s3:
+            st.markdown(
+                f"""
+                <div class="pp-metric-card">
+                    <div class="pp-metric-label">Active Risks</div>
+                    <div class="pp-metric-value">{risk_count}</div>
+                    <div class="pp-metric-desc {risk_trend_class}">{risk_desc}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
 def _extract_score(readiness):
@@ -148,26 +174,29 @@ def _render_skills_chart(current_skills, missing_skills):
                 go.Bar(
                     x=["Current Skills", "Skills Needed"],
                     y=[possessed_count, missing_count],
-                    marker_color=["#5B5CE2", "#ECEEF6"],
-                    marker_line_color=["#5B5CE2", "#D8DAE8"],
-                    marker_line_width=1,
+                    marker_color=["#5B5CE2", "#EEF0F7"],
+                    marker_line=dict(color=["#5B5CE2", "#D3D7E6"], width=1),
                     width=0.5,
+                    text=[possessed_count, missing_count],
+                    textposition="outside",
+                    textfont=dict(color="#545873", family="JetBrains Mono", size=13),
                 )
             ]
         )
         fig.update_layout(
             height=240,
-            margin=dict(l=10, r=10, t=10, b=10),
+            margin=dict(l=10, r=10, t=25, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            font_color="#6E7280",
+            font_color="#767A97",
             font_family="Inter",
-            yaxis=dict(gridcolor="rgba(23,25,35,0.06)", title="Skill Count"),
+            yaxis=dict(gridcolor="#EEF0F7", title="Skill Count", zeroline=False),
             xaxis=dict(showgrid=False),
+            showlegend=False,
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.bar_chart({"Possessed": possessed_count, "Missing": missing_count})
+        st.bar_chart({"Current Skills": possessed_count, "Skills Needed": missing_count})
 
 
 def _render_skill_gap_list(missing_skills):
@@ -179,10 +208,27 @@ def _render_skill_gap_list(missing_skills):
         if isinstance(item, dict):
             name = item.get("skill") or item.get("name") or "Unknown skill"
             priority = item.get("priority", "")
+            priority_badge = ""
+            if priority != "":
+                try:
+                    p = int(priority)
+                    tier = "high" if p == 1 else ("medium" if p == 2 else "low")
+                except (TypeError, ValueError):
+                    tier = "low"
+                colors = {
+                    "high": ("var(--danger)", "var(--danger-soft)", "var(--danger-border)"),
+                    "medium": ("var(--warning)", "var(--warning-soft)", "var(--warning-border)"),
+                    "low": ("var(--accent)", "var(--accent-soft)", "var(--accent-dim)"),
+                }
+                fg, bg, bd = colors[tier]
+                priority_badge = (
+                    f'<span style="font-family:var(--font-mono); font-size:0.68rem; font-weight:700; '
+                    f'color:{fg}; background:{bg}; border:1px solid {bd}; border-radius:999px; '
+                    f'padding:0.15rem 0.55rem; margin-left:8px;">P{priority}</span>'
+                )
             st.markdown(
                 f'<div class="pp-insight-row"><span class="pp-insight-check" style="color:var(--accent);">•</span>'
-                f'<span class="pp-insight-text"><b style="color:var(--text-primary);">{name}</b>'
-                f'{f" · priority {priority}" if priority != "" else ""}</span></div>',
+                f'<span class="pp-insight-text"><b style="color:var(--text-primary);">{name}</b>{priority_badge}</span></div>',
                 unsafe_allow_html=True,
             )
         else:
