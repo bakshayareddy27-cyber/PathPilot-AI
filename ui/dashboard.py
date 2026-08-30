@@ -1,157 +1,215 @@
 import streamlit as st
 
-def render_dashboard(profile, engine_output, safe_call, engine):
-    """
-    Renders the primary Overview Dashboard for PathPilot AI.
-    Presents readiness scores, skill gap analysis, risk detection, and current position summary.
-    """
-    # Readiness & Path Health Metrics
-    readiness = engine_output.get("readiness_score", 65)
-    path_health = engine_output.get("path_health", {}).get("score", 85)
-    skill_gaps = engine_output.get("skill_gaps", [])
-    risks = engine_output.get("risks", [])
-    next_action = engine_output.get("next_best_action", {}).get("skill", "Core Skill Setup")
+def _value(data, *keys, default="—"):
+    if not isinstance(data, dict):
+        return default
+    for key in keys:
+        value = data.get(key)
+        if value is not None and value != "":
+            return value
+    return default
 
-    # Hero Intelligence Summary Banner
-    st.markdown(f"""
-        <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 16px; padding: 28px; margin-bottom: 24px; box-shadow: var(--shadow-card);">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div>
-                    <span class="pp-badge pp-badge-indigo">Target Role Snapshot</span>
-                    <h2 style="font-size: 1.8rem; margin: 8px 0 4px 0; color: #0F172A;">{profile.target_role}</h2>
-                    <p style="color: #64748B; font-size: 0.95rem; margin-bottom: 0;">Goal: "{profile.natural_goal}"</p>
-                </div>
-                <div style="text-align: right;">
-                    <span class="pp-badge pp-badge-emerald">Role Readiness</span>
-                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 2.5rem; font-weight: 800; color: #4F46E5; line-height: 1; margin-top: 4px;">{readiness}%</div>
-                </div>
-            </div>
+
+def _normalise_score(value):
+    if isinstance(value, dict):
+        value = _value(value, "score", "readiness_score", "value", default="—")
+    if isinstance(value, (int, float)):
+        return round(value, 1)
+    return value
+
+
+def _listify(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
+
+
+def _roadmap_items(roadmap):
+    if isinstance(roadmap, dict):
+        for key in ("phases", "roadmap", "steps", "milestones", "learning_path"):
+            if isinstance(roadmap.get(key), list):
+                return roadmap[key]
+        return list(roadmap.values()) if roadmap else []
+    if isinstance(roadmap, list):
+        return roadmap
+    return []
+
+
+def render_dashboard(profile, output):
+    output = output or {}
+
+    name = getattr(profile, "name", "Learner")
+    goal = getattr(profile, "career_goal", "your goal")
+    weekly_hours = getattr(profile, "weekly_hours", "—")
+
+    readiness_raw = output.get("readiness")
+    readiness = _normalise_score(readiness_raw)
+
+    health = output.get("path_health") or {}
+    health_score = _value(health, "health_score", "score", default="—")
+    health_status = _value(health, "status", default="Building")
+
+    roadmap = _roadmap_items(output.get("roadmap"))
+    next_action = output.get("next_best_action") or {}
+    skill = _value(next_action, "skill", "title", "name", default="Your next learning step")
+    difficulty = _value(next_action, "difficulty", "level", default="Personalized")
+    effort = _value(next_action, "est_hours", "estimated_hours", "hours", default="—")
+
+    st.markdown(
+        f"""
+        <div class="pp-kicker">Your learning workspace</div>
+        <div class="pp-title">Good to see you, {name}.</div>
+        <div class="pp-subtitle">
+            Here is your personalised intelligence snapshot for your journey toward {goal}.
         </div>
-    """, unsafe_allow_html=True)
+        """,
+        unsafe_allow_html=True,
+    )
 
-    # Key Metrics Grid
+    st.write("")
     m1, m2, m3, m4 = st.columns(4)
-
     with m1:
-        st.markdown(f"""
-            <div class="pp-card" style="margin-bottom: 0;">
-                <div class="pp-metric-lbl">Role Readiness</div>
-                <div class="pp-metric-val" style="color: #4F46E5;">{readiness}%</div>
-                <div style="font-size: 0.78rem; color: #10B981; font-weight: 600; margin-top: 6px;">↑ Based on skill graph</div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        st.metric("Career goal", str(goal))
     with m2:
-        st.markdown(f"""
-            <div class="pp-card" style="margin-bottom: 0;">
-                <div class="pp-metric-lbl">Skill Gaps</div>
-                <div class="pp-metric-val" style="color: #0F172A;">{len(skill_gaps)}</div>
-                <div style="font-size: 0.78rem; color: #64748B; font-weight: 500; margin-top: 6px;">Skills to acquire</div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        st.metric("Readiness", f"{readiness}/100" if readiness != "—" else "—")
     with m3:
-        st.markdown(f"""
-            <div class="pp-card" style="margin-bottom: 0;">
-                <div class="pp-metric-lbl">Active Risks</div>
-                <div class="pp-metric-val" style="color: {'#EF4444' if risks else '#10B981'};">{len(risks)}</div>
-                <div style="font-size: 0.78rem; color: #64748B; font-weight: 500; margin-top: 6px;">Timeline blockers</div>
-            </div>
-        """, unsafe_allow_html=True)
-
+        st.metric("Path health", f"{health_score}/100" if health_score != "—" else "—")
     with m4:
-        st.markdown(f"""
-            <div class="pp-card" style="margin-bottom: 0;">
-                <div class="pp-metric-lbl">Path Health</div>
-                <div class="pp-metric-val" style="color: #10B981;">{path_health}</div>
-                <div style="font-size: 0.78rem; color: #10B981; font-weight: 600; margin-top: 6px;">Optimal trajectory</div>
-            </div>
-        """, unsafe_allow_html=True)
+        st.metric("Weekly commitment", f"{weekly_hours} hrs")
 
-    st.markdown("<br/>", unsafe_allow_html=True)
+    st.write("")
 
-    # Main Dashboard Body: Skills Landscape & Priority Gaps
-    col_left, col_right = st.columns([1.5, 1])
+    left, right = st.columns([1.55, 0.85])
 
-    with col_left:
-        st.markdown("""
-            <div class="pp-card">
-                <h4 style="font-size: 1.1rem; margin-bottom: 16px; color: #0F172A;">Priority Skill Gaps</h4>
-        """, unsafe_allow_html=True)
+    with left:
+        with st.container(border=True):
+            st.caption("✦ PATHPILOT'S NEXT BEST MOVE")
+            st.subheader(str(skill))
+            st.write(
+                "This recommendation is selected from your learner profile, current readiness "
+                "and the structure of your personalised learning path."
+            )
 
-        if skill_gaps:
-            for idx, gap in enumerate(skill_gaps[:5]):
-                gap_name = gap.get("skill", gap) if isinstance(gap, dict) else str(gap)
-                priority = gap.get("priority", "High") if isinstance(gap, dict) else "High"
-                category = gap.get("category", "Core Competency") if isinstance(gap, dict) else "Core Competency"
+            a, b, c = st.columns(3)
+            with a:
+                st.caption("DIFFICULTY")
+                st.write(f"**{difficulty}**")
+            with b:
+                st.caption("ESTIMATED EFFORT")
+                st.write(f"**{effort} hrs**" if effort != "—" else "**Personalised**")
+            with c:
+                st.caption("PATH STATUS")
+                st.write(f"**{health_status}**")
 
-                badge_class = "pp-badge-rose" if priority == "High" else "pp-badge-amber"
+            reasons = _listify(
+                _value(next_action, "reasons", "reason", "why", default=[])
+            )
+            if reasons:
+                st.divider()
+                st.markdown("**Why this now?**")
+                for reason in reasons[:3]:
+                    st.write(f"✓  {reason}")
 
-                st.markdown(f"""
-                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border: 1px solid #F1F5F9; border-radius: 8px; margin-bottom: 8px; background: #FAF5FF;">
-                        <div>
-                            <div style="font-weight: 600; color: #0F172A; font-size: 0.95rem;">{gap_name}</div>
-                            <div style="font-size: 0.78rem; color: #64748B;">Category: {category}</div>
-                        </div>
-                        <span class="pp-badge {badge_class}">{priority} Priority</span>
-                    </div>
-                """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-                <div style="padding: 16px; background: #ECFDF5; border-radius: 8px; color: #065F46; font-size: 0.9rem;">
-                    🎉 No immediate skill gaps detected for your selected configuration!
-                </div>
-            """, unsafe_allow_html=True)
+    with right:
+        with st.container(border=True):
+            st.caption("JOURNEY SNAPSHOT")
+            st.subheader("Your path at a glance")
 
-        st.markdown("</div>", unsafe_allow_html=True)
+            total = len(roadmap)
+            progress_state = st.session_state.get("roadmap_progress", {})
+            completed = len(
+                [
+                    key for key, value in progress_state.items()
+                    if value is True or value == "completed"
+                ]
+            )
+            progress = min(completed / total, 1.0) if total else 0.0
 
-        # Current Skill Matrix
-        st.markdown("""
-            <div class="pp-card">
-                <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: #0F172A;">Validated Existing Skills</h4>
-                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-        """, unsafe_allow_html=True)
+            st.metric("Milestones", total)
+            st.progress(progress)
+            st.caption(f"{completed} completed · {max(total - completed, 0)} remaining")
 
-        if profile.current_skills:
-            for sk in profile.current_skills:
-                st.markdown(f'<span class="pp-badge pp-badge-indigo" style="font-size: 0.82rem; padding: 6px 12px;">✓ {sk}</span>', unsafe_allow_html=True)
-        else:
-            st.markdown('<span style="color: #94A3B8; font-size: 0.88rem;">No existing skills declared.</span>', unsafe_allow_html=True)
+            if total:
+                st.divider()
+                st.caption("UP NEXT")
+                first = roadmap[min(completed, total - 1)]
+                if isinstance(first, dict):
+                    st.write(
+                        f"**{_value(first, 'title', 'skill', 'name', 'phase', default='Next milestone')}**"
+                    )
+                else:
+                    st.write(f"**{first}**")
 
-        st.markdown("</div></div>", unsafe_allow_html=True)
+    st.write("")
+    lower_left, lower_right = st.columns([1, 1])
 
-    with col_right:
-        # Next Best Action Focus Box
-        st.markdown(f"""
-            <div class="pp-card" style="border-left: 4px solid #4F46E5; background: linear-gradient(180deg, #FFFFFF 0%, #EEF2FF 100%);">
-                <span class="pp-badge pp-badge-indigo" style="margin-bottom: 8px;">Immediate Focus</span>
-                <h4 style="font-size: 1.1rem; margin: 4px 0 8px 0; color: #0F172A;">Recommended Action</h4>
-                <div style="font-size: 1.25rem; font-weight: 700; color: #4F46E5; margin-bottom: 8px;">{next_action}</div>
-                <p style="font-size: 0.85rem; color: #475569; line-height: 1.5; margin-bottom: 16px;">
-                    This skill is calculated as your single highest-leverage prerequisite.
-                </p>
-            </div>
-        """, unsafe_allow_html=True)
+    with lower_left:
+        with st.container(border=True):
+            st.caption("SKILL GAP INTELLIGENCE")
+            st.subheader("Where to focus")
 
-        # Learner Profile Information Card
-        st.markdown(f"""
-            <div class="pp-card">
-                <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: #0F172A;">Learner Profile Matrix</h4>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F1F5F9; font-size: 0.88rem;">
-                    <span style="color: #64748B;">Experience</span>
-                    <span style="font-weight: 600; color: #0F172A;">{profile.experience_level}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F1F5F9; font-size: 0.88rem;">
-                    <span style="color: #64748B;">Weekly Pace</span>
-                    <span style="font-weight: 600; color: #0F172A;">{profile.weekly_hours} Hours</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #F1F5F9; font-size: 0.88rem;">
-                    <span style="color: #64748B;">Target Horizon</span>
-                    <span style="font-weight: 600; color: #0F172A;">{profile.timeline}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 8px 0; font-size: 0.88rem;">
-                    <span style="color: #64748B;">Learning Style</span>
-                    <span style="font-weight: 600; color: #0F172A;">{profile.learning_style}</span>
-                </div>
-            </div>
-        """, unsafe_allow_html=True)
+            gaps = output.get("skill_gap")
+            if isinstance(gaps, dict):
+                missing = (
+                    gaps.get("missing_skills")
+                    or gaps.get("skill_gaps")
+                    or gaps.get("gaps")
+                    or []
+                )
+                strengths = gaps.get("strengths") or gaps.get("current_skills") or []
+
+                if missing:
+                    st.markdown("**Priority gaps**")
+                    for item in _listify(missing)[:5]:
+                        if isinstance(item, dict):
+                            st.write(
+                                f"• {_value(item, 'skill', 'name', 'title', default='Skill')}"
+                            )
+                        else:
+                            st.write(f"• {item}")
+                elif strengths:
+                    st.markdown("**Current strengths**")
+                    for item in _listify(strengths)[:5]:
+                        st.write(f"• {item}")
+                else:
+                    st.caption("Skill-gap details will appear after analysis.")
+            elif isinstance(gaps, list) and gaps:
+                for item in gaps[:5]:
+                    st.write(f"• {item}")
+            else:
+                st.caption("Skill-gap details will appear after analysis.")
+
+    with lower_right:
+        with st.container(border=True):
+            st.caption("INTELLIGENCE SIGNALS")
+            st.subheader("What PathPilot is watching")
+
+            risks = _listify(output.get("risks"))
+            if risks:
+                for risk in risks[:4]:
+                    if isinstance(risk, dict):
+                        title = _value(risk, "title", "type", "name", default="Learning signal")
+                        message = _value(risk, "message", "description", default="")
+                        st.write(f"**{title}**")
+                        if message:
+                            st.caption(str(message))
+                    else:
+                        st.write(f"**{risk}**")
+            else:
+                st.success("No major learning risks detected right now.")
+
+    st.write("")
+    with st.container(border=True):
+        st.caption("WHAT MAKES THIS PATH PERSONAL")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.write("**Profile-aware**")
+            st.caption("Goal, experience level, interests and current skills shape the path.")
+        with c2:
+            st.write("**Explainable**")
+            st.caption("Recommendations include reasoning instead of appearing as random suggestions.")
+        with c3:
+            st.write("**Adaptive**")
+            st.caption("Feedback and progress can influence future learning recommendations.")
