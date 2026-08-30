@@ -1,3 +1,4 @@
+
 import json
 import html
 import streamlit as st
@@ -24,19 +25,19 @@ def inject_css():
     @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap');
 
     :root {
-        --bg: #F6F7FB;
+        --bg: #F7F8FC;
         --surface: #FFFFFF;
-        --surface-2: #F1F3F8;
-        --ink: #172033;
-        --muted: #697386;
-        --line: #E5E9F1;
+        --surface-soft: #F2F4F8;
+        --ink: #182033;
+        --muted: #6B7486;
+        --line: #E4E8F0;
         --primary: #5B5CE2;
-        --primary-dark: #4546C8;
-        --primary-soft: #EEEDFF;
-        --green: #158A5B;
+        --primary-dark: #4748C9;
+        --primary-soft: #EFEEFF;
+        --green: #17865B;
         --green-soft: #EAF8F1;
         --amber: #B7791F;
-        --amber-soft: #FFF6E6;
+        --amber-soft: #FFF7E8;
         --red: #C84B5A;
         --red-soft: #FFF0F2;
     }
@@ -47,138 +48,117 @@ def inject_css():
 
     .stApp {
         background:
-            radial-gradient(circle at 85% 0%, rgba(91,92,226,.08), transparent 25%),
-            radial-gradient(circle at 0% 45%, rgba(21,138,91,.045), transparent 24%),
+            radial-gradient(circle at 92% 0%, rgba(91,92,226,.10), transparent 26%),
+            radial-gradient(circle at 0% 55%, rgba(23,134,91,.045), transparent 24%),
             var(--bg);
         color: var(--ink);
     }
 
-    #MainMenu, footer, header { visibility: hidden; }
+    #MainMenu, footer { visibility: hidden; }
+    header[data-testid="stHeader"] { background: transparent; }
 
     .block-container {
-        max-width: 1320px;
-        padding-top: 2rem;
-        padding-bottom: 3rem;
+        max-width: 1380px;
+        padding: 2.25rem 2.5rem 4rem;
     }
 
-    h1, h2, h3 {
+    h1, h2, h3, h4 {
         font-family: "Manrope", sans-serif !important;
-        letter-spacing: -.035em !important;
         color: var(--ink) !important;
+        letter-spacing: -.035em !important;
     }
 
-    /* --- Sidebar Custom Styling --- */
+    p, li, label, .stMarkdown {
+        color: var(--ink);
+    }
+
+    /* Sidebar */
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #111827 0%, #182033 100%);
-        border-right: 1px solid rgba(255, 255, 255, .07);
+        border-right: 1px solid rgba(255,255,255,.08);
     }
-
-    section[data-testid="stSidebar"] h1, 
-    section[data-testid="stSidebar"] h2, 
-    section[data-testid="stSidebar"] h3,
-    section[data-testid="stSidebar"] p,
-    section[data-testid="stSidebar"] span,
-    section[data-testid="stSidebar"] label {
-        color: #F7F8FC !important;
-    }
-
-    section[data-testid="stSidebar"] .stCaption {
-        color: #AAB4C6 !important;
-    }
-
-    section[data-testid="stSidebar"] hr {
-        border-color: rgba(255, 255, 255, .10);
-    }
-
+    section[data-testid="stSidebar"] * { color: #F7F8FC; }
+    section[data-testid="stSidebar"] .stCaption,
+    section[data-testid="stSidebar"] small { color: #AAB4C6 !important; }
+    section[data-testid="stSidebar"] hr { border-color: rgba(255,255,255,.10); }
+    section[data-testid="stSidebar"] div[role="radiogroup"] { gap: 4px; }
     section[data-testid="stSidebar"] div[role="radiogroup"] label {
-        padding: 10px 12px;
+        padding: 11px 12px;
         border-radius: 12px;
-        margin: 3px 0;
+        margin: 2px 0;
         transition: background .18s ease, transform .18s ease;
     }
-
     section[data-testid="stSidebar"] div[role="radiogroup"] label:hover {
-        background: rgba(255, 255, 255, .08);
-        transform: translateX(3px);
+        background: rgba(255,255,255,.08);
+        transform: translateX(2px);
     }
 
-    /* --- Input Fields Fix (Contrast & Visibility) --- */
-    div[data-baseweb="input"] input,
-    div[data-baseweb="textarea"] textarea,
-    div[data-baseweb="select"] div {
-        color: #172033 !important;
-        background-color: #FFFFFF !important;
+    /* Inputs */
+    div[data-baseweb="input"] > div,
+    div[data-baseweb="textarea"] > div,
+    div[data-baseweb="select"] > div {
+        background: #fff !important;
+        border-color: #DDE3ED !important;
         border-radius: 12px !important;
     }
-
+    div[data-baseweb="input"] input,
+    div[data-baseweb="textarea"] textarea,
+    div[data-baseweb="select"] * {
+        color: var(--ink) !important;
+    }
     div[data-testid="stTextInput"] label,
     div[data-testid="stTextArea"] label,
     div[data-testid="stSelectbox"] label,
-    div[data-testid="stSlider"] label,
-    div[data-testid="stNumberInput"] label {
-        color: #172033 !important;
+    div[data-testid="stNumberInput"] label,
+    div[data-testid="stSlider"] label {
+        color: var(--ink) !important;
         font-weight: 600 !important;
     }
+    div[data-baseweb="select"] [aria-selected="true"] { background: var(--primary-soft) !important; }
 
-    /* Slider Specific Fixes */
-    div[data-testid="stSlider"] div[data-testid="stMarkdownContainer"] p {
-        color: #172033 !important;
-    }
-
-    /* Cards & Containers */
+    /* Cards */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         border: 1px solid var(--line) !important;
         border-radius: 20px !important;
-        background: rgba(255, 255, 255, .92) !important;
-        box-shadow: 0 10px 30px rgba(26, 35, 60, .045);
-        transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
-    }
-
-    div[data-testid="stVerticalBlockBorderWrapper"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 42px rgba(26, 35, 60, .08);
-        border-color: #D9DDF0 !important;
+        background: rgba(255,255,255,.94) !important;
+        box-shadow: 0 8px 28px rgba(26,35,60,.045);
+        overflow: hidden;
     }
 
     div[data-testid="stMetric"] {
-        background: rgba(255, 255, 255, .88);
+        background: #fff;
         border: 1px solid var(--line);
-        border-radius: 18px;
-        padding: 15px 17px;
-        transition: transform .18s ease, box-shadow .18s ease;
+        border-radius: 16px;
+        padding: 14px 16px;
+        min-height: 96px;
     }
+    div[data-testid="stMetricLabel"] { color: var(--muted) !important; }
+    div[data-testid="stMetricValue"] { color: var(--ink) !important; font-family: "Manrope", sans-serif; }
 
-    div[data-testid="stMetric"]:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 14px 30px rgba(26, 35, 60, .07);
-    }
-
-    .stButton > button,
-    .stFormSubmitButton > button {
+    /* Buttons */
+    .stButton > button, .stFormSubmitButton > button {
         min-height: 44px !important;
         border-radius: 12px !important;
         font-weight: 700 !important;
         border: 1px solid #DDE2EC !important;
-        transition: all .18s ease !important;
+        transition: transform .16s ease, box-shadow .16s ease, background .16s ease !important;
     }
-
-    .stButton > button:hover,
-    .stFormSubmitButton > button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px rgba(26, 35, 60, .12);
+    .stButton > button:hover, .stFormSubmitButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 8px 20px rgba(26,35,60,.10);
     }
-
-    .stButton > button[kind="primary"],
-    .stFormSubmitButton > button[kind="primary"] {
+    .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] {
         background: linear-gradient(135deg, var(--primary), #7778F0) !important;
-        color: white !important;
+        color: #fff !important;
         border: none !important;
     }
 
+    /* Progress / expanders */
+    div[data-testid="stProgressBar"] > div > div { border-radius: 999px; }
     details {
         border-radius: 14px !important;
         border: 1px solid var(--line) !important;
-        background: white !important;
+        background: #fff !important;
     }
 
     .pp-kicker {
@@ -189,61 +169,50 @@ def inject_css():
         text-transform: uppercase;
         margin-bottom: .45rem;
     }
-
     .pp-title {
         font-family: "Manrope", sans-serif;
-        font-size: clamp(2rem, 4vw, 3.45rem);
+        font-size: clamp(2rem, 4vw, 3.35rem);
         font-weight: 800;
         line-height: 1.06;
         letter-spacing: -.055em;
         color: var(--ink);
         margin: 0;
     }
-
     .pp-subtitle {
         color: var(--muted);
         font-size: 1rem;
         line-height: 1.7;
-        max-width: 760px;
+        max-width: 780px;
         margin-top: .75rem;
     }
-
     .pp-brand {
         font-family: "Manrope", sans-serif;
         font-size: 1.35rem;
         font-weight: 800;
         letter-spacing: -.04em;
     }
-
     .pp-brand-dot {
         width: 38px; height: 38px; border-radius: 12px;
         display: inline-flex; align-items: center; justify-content: center;
         background: linear-gradient(135deg, #7A7CF4, #5152D7);
         color: white; font-weight: 800; margin-right: 10px;
-        box-shadow: 0 10px 22px rgba(91, 92, 226, .28);
+        box-shadow: 0 10px 22px rgba(91,92,226,.28);
     }
-
-    .pp-hero {
-        padding: 2.2rem 0 1.3rem;
-        text-align: center;
-    }
-
+    .pp-hero { padding: 2.4rem 0 1.5rem; text-align: center; }
     .pp-pill {
-        display: inline-block;
-        padding: .42rem .8rem;
-        border-radius: 999px;
-        background: var(--primary-soft);
-        color: var(--primary);
-        font-size: .72rem;
-        font-weight: 800;
-        letter-spacing: .08em;
-        text-transform: uppercase;
-        border: 1px solid #DDD9FF;
+        display: inline-block; padding: .42rem .8rem; border-radius: 999px;
+        background: var(--primary-soft); color: var(--primary);
+        font-size: .72rem; font-weight: 800; letter-spacing: .08em;
+        text-transform: uppercase; border: 1px solid #DDD9FF;
     }
+    .pp-section-gap { height: .5rem; }
+    .pp-muted { color: var(--muted); }
 
-    @media(max-width: 760px) {
-        .block-container { padding: 1.2rem 1rem 2rem; }
-        .pp-title { font-size: 2.2rem; }
+    @media (max-width: 900px) {
+        .block-container { padding: 1.5rem 1.15rem 3rem; }
+    }
+    @media (max-width: 760px) {
+        .pp-title { font-size: 2.25rem; }
     }
     </style>
     """, unsafe_allow_html=True)
