@@ -1,490 +1,215 @@
-import html
-from textwrap import dedent
-
 import streamlit as st
 
-
-def esc(value):
-    return html.escape(
-        str(value if value is not None else "—")
-    )
-
-
-def render_html(content):
-    st.markdown(
-        dedent(content).strip(),
-        unsafe_allow_html=True,
-    )
-
-
-def get_value(data, *keys, default=None):
-
+def _value(data, *keys, default="—"):
     if not isinstance(data, dict):
         return default
-
     for key in keys:
-
-        if key in data and data[key] is not None:
-            return data[key]
-
+        value = data.get(key)
+        if value is not None and value != "":
+            return value
     return default
 
 
-def normalize_score(value, default=0):
-
+def _normalise_score(value):
     if isinstance(value, dict):
+        value = _value(value, "score", "readiness_score", "value", default="—")
+    if isinstance(value, (int, float)):
+        return round(value, 1)
+    return value
 
-        value = (
-            value.get("score")
-            or value.get("readiness_score")
-            or value.get("value")
-            or default
-        )
 
-    try:
-        value = float(value)
+def _listify(value):
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return value
+    return [value]
 
-        if value <= 1:
-            value *= 100
 
-        return max(0, min(int(value), 100))
-
-    except Exception:
-        return default
+def _roadmap_items(roadmap):
+    if isinstance(roadmap, dict):
+        for key in ("phases", "roadmap", "steps", "milestones", "learning_path"):
+            if isinstance(roadmap.get(key), list):
+                return roadmap[key]
+        return list(roadmap.values()) if roadmap else []
+    if isinstance(roadmap, list):
+        return roadmap
+    return []
 
 
 def render_dashboard(profile, output):
+    output = output or {}
 
-    # ========================================================
-    # EXTRACT DATA
-    # ========================================================
+    name = getattr(profile, "name", "Learner")
+    goal = getattr(profile, "career_goal", "your goal")
+    weekly_hours = getattr(profile, "weekly_hours", "—")
 
-    readiness_data = output.get("readiness", {})
-
-    readiness = normalize_score(
-        readiness_data,
-        default=0
-    )
-
-    skill_gap = output.get("skill_gap") or {}
-
-    roadmap = output.get("roadmap") or []
+    readiness_raw = output.get("readiness")
+    readiness = _normalise_score(readiness_raw)
 
     health = output.get("path_health") or {}
+    health_score = _value(health, "health_score", "score", default="—")
+    health_status = _value(health, "status", default="Building")
 
+    roadmap = _roadmap_items(output.get("roadmap"))
     next_action = output.get("next_best_action") or {}
+    skill = _value(next_action, "skill", "title", "name", default="Your next learning step")
+    difficulty = _value(next_action, "difficulty", "level", default="Personalized")
+    effort = _value(next_action, "est_hours", "estimated_hours", "hours", default="—")
 
-    health_score = normalize_score(
-        get_value(
-            health,
-            "health_score",
-            "score",
-            default=0
-        ),
-        default=0
+    st.markdown(
+        f"""
+        <div class="pp-kicker">Your learning workspace</div>
+        <div class="pp-title">Good to see you, {name}.</div>
+        <div class="pp-subtitle">
+            Here is your personalised intelligence snapshot for your journey toward {goal}.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
 
-    health_status = get_value(
-        health,
-        "status",
-        default="Analyzing"
-    )
-
-    # ========================================================
-    # HERO
-    # ========================================================
-
-    render_html(f"""
-    <div style="margin-bottom:28px;">
-
-        <div style="
-            display:inline-flex;
-            padding:6px 11px;
-            border-radius:999px;
-            background:#F0F0FF;
-            color:#5B5CE2;
-            font-size:10px;
-            font-weight:800;
-            letter-spacing:.1em;
-        ">
-            ✦ YOUR LEARNING WORKSPACE
-        </div>
-
-        <div style="
-            font-family:Manrope,sans-serif;
-            font-size:clamp(32px,4vw,48px);
-            font-weight:800;
-            letter-spacing:-.05em;
-            color:#172033;
-            margin-top:12px;
-        ">
-            Good to see you, {esc(getattr(profile, "name", "Learner"))}.
-        </div>
-
-        <div style="
-            color:#6B7280;
-            font-size:15px;
-            margin-top:9px;
-        ">
-            Here's what PathPilot currently understands about your learning journey.
-        </div>
-
-    </div>
-    """)
-
-    # ========================================================
-    # TOP METRICS
-    # ========================================================
-
-    metric1, metric2, metric3, metric4 = st.columns(4)
-
-    with metric1:
-
-        st.metric(
-            "Career readiness",
-            f"{readiness}%",
-            "Personalized analysis",
-        )
-
-    with metric2:
-
-        st.metric(
-            "Path health",
-            f"{health_score}%",
-            str(health_status),
-        )
-
-    with metric3:
-
-        st.metric(
-            "Roadmap milestones",
-            len(roadmap),
-            "Structured learning plan",
-        )
-
-    skills = getattr(profile, "current_skills", []) or []
-
-    with metric4:
-
-        st.metric(
-            "Current skills",
-            len(skills),
-            "Skills in your profile",
-        )
+    st.write("")
+    m1, m2, m3, m4 = st.columns(4)
+    with m1:
+        st.metric("Career goal", str(goal))
+    with m2:
+        st.metric("Readiness", f"{readiness}/100" if readiness != "—" else "—")
+    with m3:
+        st.metric("Path health", f"{health_score}/100" if health_score != "—" else "—")
+    with m4:
+        st.metric("Weekly commitment", f"{weekly_hours} hrs")
 
     st.write("")
 
-    # ========================================================
-    # NEXT BEST ACTION
-    # ========================================================
-
-    skill = get_value(
-        next_action,
-        "skill",
-        "title",
-        "action",
-        default="Generate your next learning action"
-    )
-
-    difficulty = get_value(
-        next_action,
-        "difficulty",
-        default="Personalized"
-    )
-
-    effort = get_value(
-        next_action,
-        "est_hours",
-        "hours",
-        default="—"
-    )
-
-    left, right = st.columns([1.45, 0.55])
+    left, right = st.columns([1.55, 0.85])
 
     with left:
+        with st.container(border=True):
+            st.caption("✦ PATHPILOT'S NEXT BEST MOVE")
+            st.subheader(str(skill))
+            st.write(
+                "This recommendation is selected from your learner profile, current readiness "
+                "and the structure of your personalised learning path."
+            )
 
-        render_html(f"""
-        <div style="
-            background:linear-gradient(135deg,#5556D8,#7776EB);
-            border-radius:24px;
-            padding:30px;
-            color:white;
-            min-height:210px;
-            box-shadow:0 18px 45px rgba(85,86,216,.20);
-        ">
+            a, b, c = st.columns(3)
+            with a:
+                st.caption("DIFFICULTY")
+                st.write(f"**{difficulty}**")
+            with b:
+                st.caption("ESTIMATED EFFORT")
+                st.write(f"**{effort} hrs**" if effort != "—" else "**Personalised**")
+            with c:
+                st.caption("PATH STATUS")
+                st.write(f"**{health_status}**")
 
-            <div style="
-                font-size:10px;
-                font-weight:800;
-                letter-spacing:.12em;
-                opacity:.75;
-            ">
-                NEXT BEST ACTION
-            </div>
-
-            <div style="
-                font-family:Manrope,sans-serif;
-                font-size:clamp(27px,3vw,38px);
-                font-weight:800;
-                letter-spacing:-.04em;
-                margin-top:10px;
-                max-width:700px;
-            ">
-                {esc(skill)}
-            </div>
-
-            <div style="
-                display:flex;
-                gap:20px;
-                margin-top:22px;
-                flex-wrap:wrap;
-            ">
-
-                <div>
-                    <div style="font-size:9px;opacity:.65;">
-                        DIFFICULTY
-                    </div>
-                    <div style="font-weight:700;margin-top:4px;">
-                        {esc(difficulty)}
-                    </div>
-                </div>
-
-                <div>
-                    <div style="font-size:9px;opacity:.65;">
-                        ESTIMATED EFFORT
-                    </div>
-                    <div style="font-weight:700;margin-top:4px;">
-                        {esc(effort)} hrs
-                    </div>
-                </div>
-
-            </div>
-
-        </div>
-        """)
+            reasons = _listify(
+                _value(next_action, "reasons", "reason", "why", default=[])
+            )
+            if reasons:
+                st.divider()
+                st.markdown("**Why this now?**")
+                for reason in reasons[:3]:
+                    st.write(f"✓  {reason}")
 
     with right:
-
         with st.container(border=True):
+            st.caption("JOURNEY SNAPSHOT")
+            st.subheader("Your path at a glance")
 
-            st.caption("YOUR DESTINATION")
-
-            st.markdown(
-                f"### {esc(getattr(profile, 'career_goal', 'Learning Goal'))}"
+            total = len(roadmap)
+            progress_state = st.session_state.get("roadmap_progress", {})
+            completed = len(
+                [
+                    key for key, value in progress_state.items()
+                    if value is True or value == "completed"
+                ]
             )
+            progress = min(completed / total, 1.0) if total else 0.0
 
-            st.write("")
+            st.metric("Milestones", total)
+            st.progress(progress)
+            st.caption(f"{completed} completed · {max(total - completed, 0)} remaining")
 
-            st.caption("WEEKLY COMMITMENT")
-
-            st.markdown(
-                f"### {esc(getattr(profile, 'weekly_hours', '—'))} hrs"
-            )
-
-            st.caption("available for learning")
-
-    st.write("")
-
-    # ========================================================
-    # SKILLS + INSIGHTS
-    # ========================================================
-
-    left, right = st.columns([1.1, 0.9])
-
-    with left:
-
-        with st.container(border=True):
-
-            st.markdown("### Your skill profile")
-
-            st.caption(
-                "Skills currently recognized in your learner profile."
-            )
-
-            st.write("")
-
-            skills = getattr(
-                profile,
-                "current_skills",
-                []
-            ) or []
-
-            if skills:
-
-                tags = ""
-
-                for skill_name in skills:
-
-                    tags += (
-                        f"<span style='display:inline-block;"
-                        f"padding:8px 12px;"
-                        f"margin:4px;"
-                        f"background:#F1F2FF;"
-                        f"border:1px solid #E0E1FF;"
-                        f"border-radius:999px;"
-                        f"color:#5556D8;"
-                        f"font-size:13px;"
-                        f"font-weight:700;'>"
-                        f"{esc(skill_name)}</span>"
+            if total:
+                st.divider()
+                st.caption("UP NEXT")
+                first = roadmap[min(completed, total - 1)]
+                if isinstance(first, dict):
+                    st.write(
+                        f"**{_value(first, 'title', 'skill', 'name', 'phase', default='Next milestone')}**"
                     )
-
-                st.markdown(
-                    tags,
-                    unsafe_allow_html=True,
-                )
-
-            else:
-
-                st.info(
-                    "Add your skills during profiling to make "
-                    "recommendations more personalized."
-                )
-
-    with right:
-
-        with st.container(border=True):
-
-            st.markdown("### Learning preferences")
-
-            st.caption("How your path is being personalized.")
-
-            st.write("")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-
-                st.caption("STYLE")
-
-                st.markdown(
-                    f"**{str(getattr(profile, 'preferred_learning_style', 'Mixed')).title()}**"
-                )
-
-            with col2:
-
-                st.caption("TIMELINE")
-
-                st.markdown(
-                    f"**{getattr(profile, 'timeline_weeks', '—')} weeks**"
-                )
-
-            interests = getattr(
-                profile,
-                "interests",
-                []
-            ) or []
-
-            if interests:
-
-                st.write("")
-
-                st.caption("INTEREST AREAS")
-
-                st.write(", ".join(
-                    [str(item) for item in interests]
-                ))
+                else:
+                    st.write(f"**{first}**")
 
     st.write("")
+    lower_left, lower_right = st.columns([1, 1])
 
-    # ========================================================
-    # INTELLIGENCE INSIGHTS
-    # ========================================================
-
-    st.markdown("### PathPilot intelligence")
-
-    insight1, insight2 = st.columns(2)
-
-    with insight1:
-
+    with lower_left:
         with st.container(border=True):
+            st.caption("SKILL GAP INTELLIGENCE")
+            st.subheader("Where to focus")
 
-            st.markdown("#### Skill gap analysis")
-
-            if isinstance(skill_gap, dict):
-
+            gaps = output.get("skill_gap")
+            if isinstance(gaps, dict):
                 missing = (
-                    skill_gap.get("missing_skills")
-                    or skill_gap.get("skill_gaps")
-                    or skill_gap.get("gaps")
+                    gaps.get("missing_skills")
+                    or gaps.get("skill_gaps")
+                    or gaps.get("gaps")
                     or []
                 )
+                strengths = gaps.get("strengths") or gaps.get("current_skills") or []
 
                 if missing:
-
-                    if not isinstance(missing, list):
-                        missing = [missing]
-
-                    for item in missing[:5]:
-
+                    st.markdown("**Priority gaps**")
+                    for item in _listify(missing)[:5]:
                         if isinstance(item, dict):
-
-                            label = (
-                                item.get("skill")
-                                or item.get("name")
-                                or str(item)
+                            st.write(
+                                f"• {_value(item, 'skill', 'name', 'title', default='Skill')}"
                             )
-
                         else:
-                            label = str(item)
-
-                        st.markdown(f"• {esc(label)}")
-
+                            st.write(f"• {item}")
+                elif strengths:
+                    st.markdown("**Current strengths**")
+                    for item in _listify(strengths)[:5]:
+                        st.write(f"• {item}")
                 else:
-
-                    st.write(
-                        "PathPilot has analyzed your profile and will "
-                        "identify the highest-priority skills as your "
-                        "roadmap develops."
-                    )
-
+                    st.caption("Skill-gap details will appear after analysis.")
+            elif isinstance(gaps, list) and gaps:
+                for item in gaps[:5]:
+                    st.write(f"• {item}")
             else:
+                st.caption("Skill-gap details will appear after analysis.")
 
-                st.write(
-                    "Skill gap intelligence is based on your career "
-                    "goal and current profile."
-                )
-
-    with insight2:
-
+    with lower_right:
         with st.container(border=True):
+            st.caption("INTELLIGENCE SIGNALS")
+            st.subheader("What PathPilot is watching")
 
-            st.markdown("#### What happens next?")
-
-            st.write(
-                "Your learning path is designed as a sequence—not just "
-                "a list of courses."
-            )
-
-            st.markdown(
-                """
-                **PathPilot will help you:**
-
-                - Build prerequisite knowledge
-                - Close important skill gaps
-                - Complete practical milestones
-                - Adapt recommendations using feedback
-                """
-            )
+            risks = _listify(output.get("risks"))
+            if risks:
+                for risk in risks[:4]:
+                    if isinstance(risk, dict):
+                        title = _value(risk, "title", "type", "name", default="Learning signal")
+                        message = _value(risk, "message", "description", default="")
+                        st.write(f"**{title}**")
+                        if message:
+                            st.caption(str(message))
+                    else:
+                        st.write(f"**{risk}**")
+            else:
+                st.success("No major learning risks detected right now.")
 
     st.write("")
-
-    # ========================================================
-    # QUICK CTA
-    # ========================================================
-
     with st.container(border=True):
-
-        st.markdown("### Ready to continue?")
-
-        st.caption(
-            "Explore your personalized roadmap to see the recommended learning sequence."
-        )
-
-        if st.button(
-            "View My Learning Roadmap  →",
-            type="primary",
-        ):
-
-            st.session_state.nav_section = "Learning Roadmap"
-
-            st.rerun()
+        st.caption("WHAT MAKES THIS PATH PERSONAL")
+        c1, c2, c3 = st.columns(3)
+        with c1:
+            st.write("**Profile-aware**")
+            st.caption("Goal, experience level, interests and current skills shape the path.")
+        with c2:
+            st.write("**Explainable**")
+            st.caption("Recommendations include reasoning instead of appearing as random suggestions.")
+        with c3:
+            st.write("**Adaptive**")
+            st.caption("Feedback and progress can influence future learning recommendations.")
